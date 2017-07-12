@@ -25,10 +25,9 @@ impl Scanner {
             }
             toks.push(self.next()?);
         }
-        toks.push(Token::new(TC::EOF, None, self.offset));
+        toks.push(Token::new(TC::Eof, None, self.offset));
         return Ok(toks);
     }
-
 
     fn next(&mut self) -> Result<Token> {
         if self.looking_at(b"(")    { return Ok(Token::new(TC::LParen, None, self.offset)); }
@@ -242,30 +241,30 @@ fn test_scanner_err() {
 
 #[test]
 fn test_token_categories() {
-    assert_eq!(vec![TC::Var, TC::EOF], token_categories(b"var"));
-    assert_eq!(vec![TC::IntLiteral, TC::EOF], token_categories(b"1"));
-    assert_eq!(vec![TC::FloatLiteral, TC::EOF], token_categories(b"1.2"));
-    assert_eq!(vec![TC::StrLiteral, TC::EOF], token_categories(b"'hello'"));
-    assert_eq!(vec![TC::StrLiteral, TC::EOF], token_categories(b"\"hello\""));
-    assert_eq!(vec![TC::LParen, TC::EOF], token_categories(b"("));
-    assert_eq!(vec![TC::RParen, TC::EOF], token_categories(b")"));
-    assert_eq!(vec![TC::Eq, TC::EOF], token_categories(b"="));
-    assert_eq!(vec![TC::Ne, TC::EOF], token_categories(b"<>"));
-    assert_eq!(vec![TC::Lt, TC::EOF], token_categories(b"<"));
-    assert_eq!(vec![TC::Le, TC::EOF], token_categories(b"<="));
-    assert_eq!(vec![TC::Gt, TC::EOF], token_categories(b">"));
-    assert_eq!(vec![TC::Ge, TC::EOF], token_categories(b">="));
-    assert_eq!(vec![TC::Comma, TC::EOF], token_categories(b","));
-    assert_eq!(vec![TC::Not, TC::EOF], token_categories(b"not"));
-    assert_eq!(vec![TC::And, TC::EOF], token_categories(b"and"));
-    assert_eq!(vec![TC::Or, TC::EOF], token_categories(b"or"));
-    assert_eq!(vec![TC::None, TC::EOF], token_categories(b"none"));
-    assert_eq!(vec![TC::One, TC::EOF], token_categories(b"one"));
-    assert_eq!(vec![TC::All, TC::EOF], token_categories(b"all"));
-    assert_eq!(vec![TC::Of, TC::EOF], token_categories(b"of"));
-    assert_eq!(vec![TC::Is, TC::EOF], token_categories(b"is"));
-    assert_eq!(vec![TC::Null, TC::EOF], token_categories(b"null"));
-    assert_eq!(vec![TC::In, TC::EOF], token_categories(b"in"));
+    assert_eq!(vec![TC::Var, TC::Eof], token_categories(b"var"));
+    assert_eq!(vec![TC::IntLiteral, TC::Eof], token_categories(b"1"));
+    assert_eq!(vec![TC::FloatLiteral, TC::Eof], token_categories(b"1.2"));
+    assert_eq!(vec![TC::StrLiteral, TC::Eof], token_categories(b"'hello'"));
+    assert_eq!(vec![TC::StrLiteral, TC::Eof], token_categories(b"\"hello\""));
+    assert_eq!(vec![TC::LParen, TC::Eof], token_categories(b"("));
+    assert_eq!(vec![TC::RParen, TC::Eof], token_categories(b")"));
+    assert_eq!(vec![TC::Eq, TC::Eof], token_categories(b"="));
+    assert_eq!(vec![TC::Ne, TC::Eof], token_categories(b"<>"));
+    assert_eq!(vec![TC::Lt, TC::Eof], token_categories(b"<"));
+    assert_eq!(vec![TC::Le, TC::Eof], token_categories(b"<="));
+    assert_eq!(vec![TC::Gt, TC::Eof], token_categories(b">"));
+    assert_eq!(vec![TC::Ge, TC::Eof], token_categories(b">="));
+    assert_eq!(vec![TC::Comma, TC::Eof], token_categories(b","));
+    assert_eq!(vec![TC::Not, TC::Eof], token_categories(b"not"));
+    assert_eq!(vec![TC::And, TC::Eof], token_categories(b"and"));
+    assert_eq!(vec![TC::Or, TC::Eof], token_categories(b"or"));
+    assert_eq!(vec![TC::None, TC::Eof], token_categories(b"none"));
+    assert_eq!(vec![TC::One, TC::Eof], token_categories(b"one"));
+    assert_eq!(vec![TC::All, TC::Eof], token_categories(b"all"));
+    assert_eq!(vec![TC::Of, TC::Eof], token_categories(b"of"));
+    assert_eq!(vec![TC::Is, TC::Eof], token_categories(b"is"));
+    assert_eq!(vec![TC::Null, TC::Eof], token_categories(b"null"));
+    assert_eq!(vec![TC::In, TC::Eof], token_categories(b"in"));
 }
 
 #[cfg(test)]
