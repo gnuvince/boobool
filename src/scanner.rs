@@ -19,7 +19,7 @@ impl Scanner {
     fn scan_expr(&mut self) -> Result<Vec<Token>> {
         let mut toks: Vec<Token> = Vec::new();
         while !self.eof() {
-            while is_whitespace(self.peek()) {
+            if is_whitespace(self.peek()) {
                 self.offset += 1;
                 continue;
             }
@@ -236,6 +236,12 @@ fn test_scanner_err() {
         Err(Error::MissingDigits(_)) => true,
         _ => false
     });
+}
+
+
+#[test]
+fn test_input_ends_with_newline() {
+    assert!(Scanner::scan(b"var\n".to_vec()).is_ok());
 }
 
 
