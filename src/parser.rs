@@ -328,8 +328,56 @@ fn test_parens() {
 
 
 #[test]
+fn test_list_ops() {
+    assert!(test::parse(b"x in xs").is_ok());
+    assert!(test::parse(b"x in (1,2,3)").is_ok());
+    assert!(test::parse(b"1 in (1,2,3)").is_ok());
+    assert!(test::parse(b"1 in xs").is_ok());
+    assert!(test::parse(b"x not in xs").is_ok());
+    assert!(test::parse(b"x not in (1,2,3)").is_ok());
+    assert!(test::parse(b"1 not in (1,2,3)").is_ok());
+    assert!(test::parse(b"1 not in xs").is_ok());
+    assert!(test::parse(b"1 in (x and y)").is_err());
+    assert!(test::parse(b"1 not in (x and y)").is_err());
+
+    assert!(test::parse(b"x none of xs").is_ok());
+    assert!(test::parse(b"x none of (1,2,3)").is_ok());
+    assert!(test::parse(b"1 none of (1,2,3)").is_ok());
+    assert!(test::parse(b"1 none of xs").is_ok());
+    assert!(test::parse(b"(1,2) none of xs").is_err());
+
+    assert!(test::parse(b"x one of xs").is_ok());
+    assert!(test::parse(b"x one of (1,2,3)").is_ok());
+    assert!(test::parse(b"1 one of (1,2,3)").is_ok());
+    assert!(test::parse(b"1 one of xs").is_ok());
+    assert!(test::parse(b"(1,2) one of xs").is_err());
+
+    assert!(test::parse(b"x all of xs").is_ok());
+    assert!(test::parse(b"x all of (1,2,3)").is_ok());
+    assert!(test::parse(b"1 all of (1,2,3)").is_ok());
+    assert!(test::parse(b"1 all of xs").is_ok());
+    assert!(test::parse(b"(1,2) all of xs").is_err());
+}
+
+#[test]
+fn test_cmp_ops() {
+    assert!(test::parse(b"x = y").is_ok());
+    assert!(test::parse(b"x <> 1").is_ok());
+    assert!(test::parse(b"1 < x").is_ok());
+    assert!(test::parse(b"1 <= 2").is_ok());
+    assert!(test::parse(b"4.4 > 'foo'").is_ok());
+    assert!(test::parse(b"b >= (2,3,5,7)").is_ok());
+}
+
+
+#[test]
 fn test_var() {
     assert!(test::parse(b"var").is_ok());
+    assert!(test::parse(b"var is null").is_ok());
+    assert!(test::parse(b"var is not null").is_ok());
+
+    assert!(test::parse(b"1 is null").is_err());
+    assert!(test::parse(b"'foo' is not null").is_err());
 }
 
 #[test]
