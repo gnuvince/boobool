@@ -1,7 +1,7 @@
 use errors::{Result, Error};
 use tokens::Token;
 use tokens::TokenCategory as TC;
-use untyped_ast::{Expr, CmpOp};
+use ast::{Expr, CmpOp};
 
 #[derive(Debug)]
 pub struct Parser {
