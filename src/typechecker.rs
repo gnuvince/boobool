@@ -95,7 +95,7 @@ fn tc_list(exprs: Vec<UntypedExpr>, st: &Symtable) -> Result<TypedExpr> {
 
     return Ok(TypedExpr {
         expr: ExprCategory::List(texprs),
-        ty: ty
+        ty: Type::List(Box::new(ty))
     });
 }
 
@@ -150,8 +150,9 @@ fn tc_set_op(op: SetOp, e1: UntypedExpr, e2: UntypedExpr, st: &Symtable) -> Resu
 
     let is_ok = match (&te1.ty, &te2.ty) {
         (&Type::List(ref x), &Type::List(ref y)) =>
-            (types_eq(x, &Type::Int) || types_eq(x, &Type::Str)) && types_eq(x, y),
-        _ => false
+            (types_eq(x, &Type::Int) && types_eq(y, &Type::Int)) ||
+            (types_eq(x, &Type::Str) && types_eq(y, &Type::Str)),
+        x => {println!("{:?}", x);false}
     };
 
     if !is_ok {
