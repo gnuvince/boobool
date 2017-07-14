@@ -24,8 +24,8 @@ fn run() -> Result<()> {
         let bytes: Vec<u8> = buf.bytes().collect();
         let toks = scanner::Scanner::scan(bytes)?;
         let expr = parser::Parser::parse(toks)?;
-        println!("{}", expr);
         let texpr = typechecker::tc_expr(expr, &st)?;
+        println!("{}", texpr);
         buf.clear();
     }
     return Ok(());

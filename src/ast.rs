@@ -2,26 +2,38 @@ use std::fmt;
 
 use types::Type;
 
+
+pub type UntypedExpr = Expr<()>;
+pub type TypedExpr = Expr<Type>;
+
+
 #[derive(Debug)]
-pub enum Expr {
+pub struct Expr<T> {
+    pub expr: ExprCategory<T>,
+    pub ty: T,
+}
+
+
+#[derive(Debug)]
+pub enum ExprCategory<T> {
     // Base expressions
     Var(String),
     Int(i64),
     Float(f64),
     Str(String),
-    List(Vec<Expr>),
+    List(Vec<Expr<T>>),
 
     // Operations
-    Compare(CmpOp, Box<Expr>, Box<Expr>),
-    In(Box<Expr>, Box<Expr>),
-    SetOp(SetOp, Box<Expr>, Box<Expr>),
-    Call(String, Vec<Expr>),
+    Compare(CmpOp, Box<Expr<T>>, Box<Expr<T>>),
+    In(Box<Expr<T>>, Box<Expr<T>>),
+    SetOp(SetOp, Box<Expr<T>>, Box<Expr<T>>),
+    Call(String, Vec<Expr<T>>),
     IsNull(String), // Only valid on variable names
 
     // Boolean combinators
-    Or(Vec<Expr>),
-    And(Vec<Expr>),
-    Not(Box<Expr>),
+    Or(Vec<Expr<T>>),
+    And(Vec<Expr<T>>),
+    Not(Box<Expr<T>>),
 }
 
 
@@ -29,13 +41,6 @@ pub enum Expr {
 pub enum CmpOp {
     Eq, Ne, Lt, Le, Gt, Ge
 }
-
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum SetOp {
-    NoneOf, OneOf, AllOf
-}
-
 
 
 impl fmt::Display for CmpOp {
@@ -52,33 +57,51 @@ impl fmt::Display for CmpOp {
 }
 
 
-impl fmt::Display for Expr {
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum SetOp {
+    NoneOf, OneOf, AllOf
+}
+
+
+impl fmt::Display for SetOp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use self::SetOp::*;
-        use self::Expr::*;
         match *self {
-            Var(ref v) => write!(f, "{}", v),
-            Int(i) => write!(f, "{}", i),
-            Float(x) => write!(f, "{}", x),
-            Str(ref s) => write!(f, "'{}'", s),
+            SetOp::NoneOf => write!(f, "none of"),
+            SetOp::OneOf => write!(f, "one of"),
+            SetOp::AllOf => write!(f, "all of"),
+        }
+    }
+}
+
+
+impl <T> fmt::Display for ExprCategory<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::ExprCategory::*;
+        match *self {
+            Var(ref v) =>
+                write!(f, "{}", v),
+            Int(i) =>
+                write!(f, "{}", i),
+            Float(x) =>
+                write!(f, "{}", x),
+            Str(ref s) =>
+                write!(f, "'{}'", s),
             List(ref elems) => {
                 let subexprs: Vec<String> = elems.iter().map(|x| format!("{}", x)).collect();
                 write!(f, "({})", subexprs.join(", "))
             }
-            Compare(op, ref a, ref b) => write!(f, "{} {} {}", a, op, b),
+            Compare(op, ref a, ref b) =>
+                write!(f, "{} {} {}", a, op, b),
             In(ref needle, ref haystack) =>
                 write!(f, "{} in {}", needle, haystack),
-            SetOp(NoneOf, ref a, ref b) =>
-                write!(f, "{} none of {}", a, b),
-            SetOp(OneOf, ref a, ref b) =>
-                write!(f, "{} one of {}", a, b),
-            SetOp(AllOf, ref a, ref b) =>
-                write!(f, "{} all of {}", a, b),
+            SetOp(op, ref a, ref b) =>
+                write!(f, "{} {} {}", a, op, b),
             Call(ref func, ref args) => {
                 let subexprs: Vec<String> = args.iter().map(|x| format!("{}", x)).collect();
                 write!(f, "{}({})", func, subexprs.join(", "))
             }
-            IsNull(ref var) => write!(f, "{} is null", var),
+            IsNull(ref var) =>
+                write!(f, "{} is null", var),
             Or(ref exprs) => {
                 let subexprs: Vec<String> = exprs.iter().map(|x| format!("{}", x)).collect();
                 write!(f, "({})", subexprs.join(" or "))
@@ -93,32 +116,8 @@ impl fmt::Display for Expr {
 }
 
 
-
-
-#[derive(Debug)]
-pub struct TExpr {
-    pub expr: TExprEnum,
-    pub ty: Type,
-}
-
-#[derive(Debug)]
-pub enum TExprEnum {
-    // Base expressions
-    Var(String),
-    Int(i64),
-    Float(f64),
-    Str(String),
-    List(Vec<TExpr>),
-
-    // Operations
-    Compare(CmpOp, Box<TExpr>, Box<TExpr>),
-    In(Box<TExpr>, Box<TExpr>),
-    SetOp(SetOp, Box<TExpr>, Box<TExpr>),
-    Call(String, Vec<TExpr>),
-    IsNull(String), // Only valid on variable names
-
-    // Boolean combinators
-    Or(Vec<TExpr>),
-    And(Vec<TExpr>),
-    Not(Box<TExpr>),
+impl <T> fmt::Display for Expr<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.expr)
+    }
 }
