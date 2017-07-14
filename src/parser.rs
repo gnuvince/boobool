@@ -1,7 +1,7 @@
 use errors::{Result, Error};
 use tokens::Token;
 use tokens::TokenCategory as TC;
-use ast::{Expr, CmpOp};
+use ast::{Expr, CmpOp, SetOp};
 
 #[derive(Debug)]
 pub struct Parser {
@@ -97,15 +97,15 @@ impl Parser {
 
         if self.looking_at(&[TC::None, TC::Of]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::NoneOf(Box::new(op1), Box::new(op2)));
+            return Ok(Expr::SetOp(SetOp::NoneOf, Box::new(op1), Box::new(op2)));
         }
         if self.looking_at(&[TC::One, TC::Of]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::OneOf(Box::new(op1), Box::new(op2)));
+            return Ok(Expr::SetOp(SetOp::OneOf, Box::new(op1), Box::new(op2)));
         }
         if self.looking_at(&[TC::All, TC::Of]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::AllOf(Box::new(op1), Box::new(op2)));
+            return Ok(Expr::SetOp(SetOp::AllOf, Box::new(op1), Box::new(op2)));
         }
         if self.looking_at(&[TC::Eq]) {
             let op2 = self.parse_op()?;
@@ -394,7 +394,7 @@ fn test_call() {
 mod test {
     use scanner::Scanner;
     use errors::Result;
-    use untyped_ast::Expr;
+    use ast::Expr;
     use super::Parser;
 
     pub fn parse(input: &[u8]) -> Result<Expr> {

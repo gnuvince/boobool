@@ -20,24 +20,36 @@ pub enum Error {
     UnterminatedList(usize),
     InvalidOperation(usize),
     InvalidOperator(usize),
+
+    // Type checker errors
+    EmptyList,
+    IncorrectType,
+    InvalidListType,
+    InvalidComparison,
+    InvalidSetOperation,
+
+    // Symbol table errors
+    UndeclaredVariable,
 }
 
 
 impl Error {
-    fn offset(&self) -> Result<usize> {
+    fn offset(&self) -> Option<usize> {
         match *self {
-            Error::UnknownCharacter(_, x) => Ok(x),
-            Error::UnterminatedStringLiteral(x) => Ok(x),
-            Error::MissingDigits(x) => Ok(x),
-            Error::MissingLexeme(x) => Ok(x),
-            Error::InvalidIntLiteral(x) => Ok(x),
-            Error::InvalidFloatLiteral(x) => Ok(x),
-            Error::MissingComma(x) => Ok(x),
-            Error::ExtraTokens(x) => Ok(x),
-            Error::InvalidToken(x) => Ok(x),
-            Error::UnterminatedList(x) => Ok(x),
-            Error::InvalidOperation(x) => Ok(x),
-            Error::InvalidOperator(x) => Ok(x),
+            Error::UnknownCharacter(_, x) => Some(x),
+            Error::UnterminatedStringLiteral(x) => Some(x),
+            Error::MissingDigits(x) => Some(x),
+            Error::MissingLexeme(x) => Some(x),
+            Error::InvalidIntLiteral(x) => Some(x),
+            Error::InvalidFloatLiteral(x) => Some(x),
+            Error::MissingComma(x) => Some(x),
+            Error::ExtraTokens(x) => Some(x),
+            Error::InvalidToken(x) => Some(x),
+            Error::UnterminatedList(x) => Some(x),
+            Error::InvalidOperation(x) => Some(x),
+            Error::InvalidOperator(x) => Some(x),
+
+            _ => None
         }
     }
 }
@@ -58,6 +70,14 @@ impl E for Error {
             Error::UnterminatedList(_) => "unterminated list",
             Error::InvalidOperation(_) => "invalid operation",
             Error::InvalidOperator(_) => "invalid operator",
+            Error::EmptyList => "cannot type an empty list",
+
+            Error::IncorrectType => "incorrect type",
+            Error::InvalidListType => "only lists of ints and strings are allowed",
+            Error::InvalidComparison => "invalid comparison",
+            Error::InvalidSetOperation => "invalid set operation",
+
+            Error::UndeclaredVariable => "undeclared variable",
         }
     }
 }
@@ -66,7 +86,7 @@ impl E for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.description())?;
-        if let Ok(offset) = self.offset() {
+        if let Some(offset) = self.offset() {
             write!(f, " at offset {}", offset)?;
         }
         return Ok(());

@@ -1,5 +1,7 @@
 use std::fmt;
 
+use types::Type;
+
 #[derive(Debug)]
 pub enum Expr {
     // Base expressions
@@ -12,9 +14,7 @@ pub enum Expr {
     // Operations
     Compare(CmpOp, Box<Expr>, Box<Expr>),
     In(Box<Expr>, Box<Expr>),
-    NoneOf(Box<Expr>, Box<Expr>),
-    OneOf(Box<Expr>, Box<Expr>),
-    AllOf(Box<Expr>, Box<Expr>),
+    SetOp(SetOp, Box<Expr>, Box<Expr>),
     Call(String, Vec<Expr>),
     IsNull(String), // Only valid on variable names
 
@@ -25,10 +25,17 @@ pub enum Expr {
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CmpOp {
     Eq, Ne, Lt, Le, Gt, Ge
 }
+
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum SetOp {
+    NoneOf, OneOf, AllOf
+}
+
 
 
 impl fmt::Display for CmpOp {
@@ -47,6 +54,7 @@ impl fmt::Display for CmpOp {
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::SetOp::*;
         use self::Expr::*;
         match *self {
             Var(ref v) => write!(f, "{}", v),
@@ -60,11 +68,11 @@ impl fmt::Display for Expr {
             Compare(op, ref a, ref b) => write!(f, "{} {} {}", a, op, b),
             In(ref needle, ref haystack) =>
                 write!(f, "{} in {}", needle, haystack),
-            NoneOf(ref a, ref b) =>
+            SetOp(NoneOf, ref a, ref b) =>
                 write!(f, "{} none of {}", a, b),
-            OneOf(ref a, ref b) =>
+            SetOp(OneOf, ref a, ref b) =>
                 write!(f, "{} one of {}", a, b),
-            AllOf(ref a, ref b) =>
+            SetOp(AllOf, ref a, ref b) =>
                 write!(f, "{} all of {}", a, b),
             Call(ref func, ref args) => {
                 let subexprs: Vec<String> = args.iter().map(|x| format!("{}", x)).collect();
@@ -82,4 +90,35 @@ impl fmt::Display for Expr {
             Not(ref expr) => write!(f, "not {}", expr)
         }
     }
+}
+
+
+
+
+#[derive(Debug)]
+pub struct TExpr {
+    pub expr: TExprEnum,
+    pub ty: Type,
+}
+
+#[derive(Debug)]
+pub enum TExprEnum {
+    // Base expressions
+    Var(String),
+    Int(i64),
+    Float(f64),
+    Str(String),
+    List(Vec<TExpr>),
+
+    // Operations
+    Compare(CmpOp, Box<TExpr>, Box<TExpr>),
+    In(Box<TExpr>, Box<TExpr>),
+    SetOp(SetOp, Box<TExpr>, Box<TExpr>),
+    Call(String, Vec<TExpr>),
+    IsNull(String), // Only valid on variable names
+
+    // Boolean combinators
+    Or(Vec<TExpr>),
+    And(Vec<TExpr>),
+    Not(Box<TExpr>),
 }
