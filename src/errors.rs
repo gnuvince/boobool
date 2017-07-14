@@ -27,6 +27,7 @@ pub enum Error {
     InvalidListType,
     InvalidComparison,
     InvalidSetOperation,
+    NotAFunction,
 
     // Symbol table errors
     UndeclaredVariable,
@@ -76,6 +77,7 @@ impl E for Error {
             Error::InvalidListType => "only lists of ints and strings are allowed",
             Error::InvalidComparison => "invalid comparison",
             Error::InvalidSetOperation => "invalid set operation",
+            Error::NotAFunction => "not a function",
 
             Error::UndeclaredVariable => "undeclared variable",
         }

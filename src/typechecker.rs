@@ -31,6 +31,8 @@ pub fn tc_expr(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
             tc_list(elems, st),
         ExprCategory::Compare(op, e1, e2) =>
             tc_compare(op, *e1, *e2, st),
+        ExprCategory::Call(func_name, args) =>
+            tc_call(func_name, args, st),
         ExprCategory::In(needle, haystack) =>
             tc_in(*needle, *haystack, st),
         ExprCategory::SetOp(op, x, y) =>
@@ -66,8 +68,6 @@ pub fn tc_expr(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
                 ty: Type::Bool
             });
         }
-
-        _ => unimplemented!()
     }
 }
 
@@ -185,4 +185,31 @@ fn tc_bool_vec(exprs: Vec<UntypedExpr>, st: &Symtable) -> Result<Vec<TypedExpr>>
         }
     }
     return Ok(texprs);
+}
+
+
+fn tc_call(func_name: String, args: Vec<UntypedExpr>, st: &Symtable) -> Result<TypedExpr> {
+    let mut targs = Vec::with_capacity(args.len());
+
+    let func_type = st.get(&func_name)?;
+    let (expected, result) = match func_type {
+        Type::Func(args, res) => (args, res),
+        _ => { return Err(Error::NotAFunction) }
+    };
+
+    if args.len() != expected.len() {
+        return Err(Error::IncorrectType);
+    }
+
+    for (arg, ty) in args.into_iter().zip(expected) {
+        let targ = tc_expr(arg, st)?;
+        if !types_eq(&targ.ty, &ty) {
+            return Err(Error::IncorrectType);
+        }
+        targs.push(targ);
+    }
+    return Ok(TypedExpr {
+        expr: ExprCategory::Call(func_name, targs),
+        ty: *result
+    });
 }
