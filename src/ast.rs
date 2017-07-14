@@ -10,6 +10,7 @@ pub type TypedExpr = Expr<Type>;
 #[derive(Debug)]
 pub struct Expr<T> {
     pub expr: ExprCategory<T>,
+    pub pos: usize, // use `pos` here to not be confused with `offset` in the parser
     pub ty: T,
 }
 

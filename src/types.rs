@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt;
 
 use errors::{Error, Result};
 
@@ -13,14 +14,18 @@ pub enum Type {
 }
 
 
-pub fn types_eq(t1: &Type, t2: &Type) -> bool {
-    match (t1, t2) {
-        (&Type::Bool, &Type::Bool) => true,
-        (&Type::Int, &Type::Int) => true,
-        (&Type::Float, &Type::Float) => true,
-        (&Type::Str, &Type::Str) => true,
-        (&Type::List(ref x), &Type::List(ref y)) => types_eq(&*x, &*y),
-        _ => false,
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Type::Bool => write!(f, "bool"),
+            Type::Int => write!(f, "int"),
+            Type::Float => write!(f, "float"),
+            Type::Str => write!(f, "str"),
+            Type::List(ref t) => write!(f, "List({})", t),
+            Type::Func(_, _) => {
+                write!(f, "function")
+            }
+        }
     }
 }
 
@@ -42,7 +47,7 @@ impl Symtable {
 
 
     pub fn get(&self, var: &str) -> Result<Type> {
-        let ty = self.symbols.get(var).ok_or(Error::UndeclaredVariable)?;
+        let ty = self.symbols.get(var).ok_or(Error::UndeclaredVariable(var.to_owned()))?;
         return Ok(ty.clone());
     }
 }

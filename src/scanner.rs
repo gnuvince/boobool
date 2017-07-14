@@ -53,7 +53,7 @@ impl Scanner {
         if self.peek() == b'\''     { return self.scan_string(b'\''); }
         if is_digit(self.peek())    { return self.scan_number(); }
         if is_alpha(self.peek())    { return self.scan_var(); }
-        return Err(Error::UnknownCharacter(self.peek(), self.offset));
+        return Err(Error::UnknownCharacter(self.offset, self.peek()));
     }
 
 
