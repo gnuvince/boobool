@@ -1,7 +1,7 @@
 use errors::{Result, Error};
 use tokens::Token;
 use tokens::TokenCategory as TC;
-use ast::{Expr, CmpOp, SetOp};
+use ast::{ExprCategory, UntypedExpr, CmpOp, SetOp};
 
 #[derive(Debug)]
 pub struct Parser {
@@ -10,14 +10,22 @@ pub struct Parser {
 }
 
 
+fn mkexpr(ec: ExprCategory<()>) -> UntypedExpr {
+    return UntypedExpr {
+        expr: ec,
+        ty: ()
+    };
+}
+
+
 impl Parser {
-    pub fn parse(tokens: Vec<Token>) -> Result<Expr> {
+    pub fn parse(tokens: Vec<Token>) -> Result<UntypedExpr> {
         let mut parser = Parser { tokens: tokens, offset: 0 };
         return parser.parse_expr();
     }
 
 
-    fn parse_expr(&mut self) -> Result<Expr> {
+    fn parse_expr(&mut self) -> Result<UntypedExpr> {
         let expr = self.parse_or()?;
         match self.peek().cat {
             TC::Eof => Ok(expr),
@@ -26,7 +34,7 @@ impl Parser {
     }
 
 
-    fn parse_or(&mut self) -> Result<Expr> {
+    fn parse_or(&mut self) -> Result<UntypedExpr> {
         let mut subexprs = Vec::new();
         subexprs.push(self.parse_and()?);
         while !self.eof() && self.peek().cat == TC::Or {
@@ -37,12 +45,12 @@ impl Parser {
             let expr = subexprs.into_iter().next().unwrap();
             return Ok(expr);
         } else {
-            return Ok(Expr::Or(subexprs));
+            return Ok(mkexpr(ExprCategory::Or(subexprs)));
         }
     }
 
 
-    fn parse_and(&mut self) -> Result<Expr> {
+    fn parse_and(&mut self) -> Result<UntypedExpr> {
         let mut subexprs = Vec::new();
         subexprs.push(self.parse_simple()?);
         while !self.eof() && self.peek().cat == TC::And {
@@ -53,17 +61,17 @@ impl Parser {
             let expr = subexprs.into_iter().next().unwrap();
             return Ok(expr);
         } else {
-            return Ok(Expr::And(subexprs));
+            return Ok(mkexpr(ExprCategory::And(subexprs)));
         }
     }
 
 
-    fn parse_simple(&mut self) -> Result<Expr> {
+    fn parse_simple(&mut self) -> Result<UntypedExpr> {
         if self.looking_at(&[TC::Var, TC::LParen]) {
             self.offset -= 1;
             let func_name = self.peek_prev().lexeme_string()?;
             let args = self.parse_list_op()?;
-            return Ok(Expr::Call(func_name, args));
+            return Ok(mkexpr(ExprCategory::Call(func_name, args)));
         }
         if self.looking_at(&[TC::LParen]) {
             let expr = self.parse_or()?;
@@ -74,72 +82,83 @@ impl Parser {
         }
         if self.looking_at(&[TC::Not]) {
             let expr = self.parse_simple()?;
-            return Ok(Expr::Not(Box::new(expr)));
+            return Ok(mkexpr(ExprCategory::Not(Box::new(expr))));
         }
         if self.looking_at(&[TC::Var, TC::Is, TC::Null]) {
             let var_name = self.peek_at(self.offset - 3).lexeme_string()?;
-            return Ok(Expr::IsNull(var_name));
+            return Ok(mkexpr(ExprCategory::IsNull(var_name)));
         }
         if self.looking_at(&[TC::Var, TC::Is, TC::Not, TC::Null]) {
             let var_name = self.peek_at(self.offset - 4).lexeme_string()?;
-            return Ok(Expr::Not(Box::new(Expr::IsNull(var_name))));
+            let is_null = mkexpr(ExprCategory::IsNull(var_name));
+            return Ok(mkexpr(ExprCategory::Not(Box::new(is_null))));
         }
 
         let op1 = self.parse_op()?;
         if self.looking_at(&[TC::In]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::In(Box::new(op1), Box::new(op2)));
+            return Ok(mkexpr(ExprCategory::In(Box::new(op1), Box::new(op2))));
         }
         if self.looking_at(&[TC::Not, TC::In]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::Not(Box::new(Expr::In(Box::new(op1), Box::new(op2)))));
+            let in_expr = mkexpr(ExprCategory::In(Box::new(op1), Box::new(op2)));
+            return Ok(mkexpr(ExprCategory::Not(Box::new(in_expr))));
         }
 
         if self.looking_at(&[TC::None, TC::Of]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::SetOp(SetOp::NoneOf, Box::new(op1), Box::new(op2)));
+            return Ok(mkexpr(ExprCategory::SetOp(
+                SetOp::NoneOf, Box::new(op1), Box::new(op2))));
         }
         if self.looking_at(&[TC::One, TC::Of]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::SetOp(SetOp::OneOf, Box::new(op1), Box::new(op2)));
+            return Ok(mkexpr(ExprCategory::SetOp(
+                SetOp::OneOf, Box::new(op1), Box::new(op2))));
         }
         if self.looking_at(&[TC::All, TC::Of]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::SetOp(SetOp::AllOf, Box::new(op1), Box::new(op2)));
+            return Ok(mkexpr(ExprCategory::SetOp(
+                SetOp::AllOf, Box::new(op1), Box::new(op2))));
         }
         if self.looking_at(&[TC::Eq]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::Compare(CmpOp::Eq, Box::new(op1), Box::new(op2)));
+            return Ok(mkexpr(ExprCategory::Compare(
+                CmpOp::Eq, Box::new(op1), Box::new(op2))));
         }
         if self.looking_at(&[TC::Ne]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::Compare(CmpOp::Ne, Box::new(op1), Box::new(op2)));
+            return Ok(mkexpr(ExprCategory::Compare(
+                CmpOp::Ne, Box::new(op1), Box::new(op2))));
         }
         if self.looking_at(&[TC::Lt]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::Compare(CmpOp::Lt, Box::new(op1), Box::new(op2)));
+            return Ok(mkexpr(ExprCategory::Compare(
+                CmpOp::Lt, Box::new(op1), Box::new(op2))));
         }
         if self.looking_at(&[TC::Le]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::Compare(CmpOp::Le, Box::new(op1), Box::new(op2)));
+            return Ok(mkexpr(ExprCategory::Compare(
+                CmpOp::Le, Box::new(op1), Box::new(op2))));
         }
         if self.looking_at(&[TC::Gt]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::Compare(CmpOp::Gt, Box::new(op1), Box::new(op2)));
+            return Ok(mkexpr(ExprCategory::Compare(
+                CmpOp::Gt, Box::new(op1), Box::new(op2))));
         }
         if self.looking_at(&[TC::Ge]) {
             let op2 = self.parse_op()?;
-            return Ok(Expr::Compare(CmpOp::Ge, Box::new(op1), Box::new(op2)));
+            return Ok(mkexpr(ExprCategory::Compare(
+                CmpOp::Ge, Box::new(op1), Box::new(op2))));
         }
 
         return Ok(op1);
     }
 
 
-    fn parse_op(&mut self) -> Result<Expr> {
+    fn parse_op(&mut self) -> Result<UntypedExpr> {
         if self.looking_at(&[TC::Var]) {
             let var_name = self.peek_prev().lexeme_string()?;
-            return Ok(Expr::Var(var_name));
+            return Ok(mkexpr(ExprCategory::Var(var_name)));
         }
         if self.looking_at(&[TC::IntLiteral]) ||
             self.looking_at(&[TC::FloatLiteral]) ||
@@ -155,24 +174,24 @@ impl Parser {
     }
 
 
-    fn parse_lit(&mut self) -> Result<Expr> {
+    fn parse_lit(&mut self) -> Result<UntypedExpr> {
         if self.looking_at(&[TC::IntLiteral]) {
             let val = self.peek_prev().lexeme_i64()?;
-            return Ok(Expr::Int(val));
+            return Ok(mkexpr(ExprCategory::Int(val)));
         }
         if self.looking_at(&[TC::FloatLiteral]) {
             let val = self.peek_prev().lexeme_f64()?;
-            return Ok(Expr::Float(val));
+            return Ok(mkexpr(ExprCategory::Float(val)));
         }
         if self.looking_at(&[TC::StrLiteral]) {
             let val = self.peek_prev().lexeme_string()?;
-            return Ok(Expr::Str(val));
+            return Ok(mkexpr(ExprCategory::Str(val)));
         }
         return Err(Error::InvalidOperator(self.offset));
     }
 
 
-    fn parse_list_lit(&mut self) -> Result<Expr> {
+    fn parse_list_lit(&mut self) -> Result<UntypedExpr> {
         let initial_offset = self.offset;
         let mut exprs = Vec::new();
 
@@ -196,11 +215,11 @@ impl Parser {
             return Err(Error::InvalidToken(self.offset));
         }
 
-        return Ok(Expr::List(exprs));
+        return Ok(mkexpr(ExprCategory::List(exprs)));
     }
 
 
-    fn parse_list_op(&mut self) -> Result<Vec<Expr>> {
+    fn parse_list_op(&mut self) -> Result<Vec<UntypedExpr>> {
         let initial_offset = self.offset;
         let mut exprs = Vec::new();
 
@@ -394,10 +413,10 @@ fn test_call() {
 mod test {
     use scanner::Scanner;
     use errors::Result;
-    use ast::Expr;
+    use ast::UntypedExpr;
     use super::Parser;
 
-    pub fn parse(input: &[u8]) -> Result<Expr> {
+    pub fn parse(input: &[u8]) -> Result<UntypedExpr> {
         let toks = Scanner::scan(input.to_vec())?;
         let x = Parser::parse(toks);
         return x;
