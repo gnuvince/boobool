@@ -10,9 +10,10 @@ pub struct Parser {
 }
 
 
-fn mkexpr(ec: ExprCategory<()>) -> UntypedExpr {
+fn mkexpr(ec: ExprCategory<()>, pos: usize) -> UntypedExpr {
     return UntypedExpr {
         expr: ec,
+        pos: pos,
         ty: ()
     };
 }
@@ -45,7 +46,8 @@ impl Parser {
             let expr = subexprs.into_iter().next().unwrap();
             return Ok(expr);
         } else {
-            return Ok(mkexpr(ExprCategory::Or(subexprs)));
+            let pos = subexprs[0].pos;
+            return Ok(mkexpr(ExprCategory::Or(subexprs), pos));
         }
     }
 
@@ -61,7 +63,8 @@ impl Parser {
             let expr = subexprs.into_iter().next().unwrap();
             return Ok(expr);
         } else {
-            return Ok(mkexpr(ExprCategory::And(subexprs)));
+            let pos = subexprs[0].pos;
+            return Ok(mkexpr(ExprCategory::And(subexprs), pos));
         }
     }
 
@@ -69,9 +72,10 @@ impl Parser {
     fn parse_simple(&mut self) -> Result<UntypedExpr> {
         if self.looking_at(&[TC::Var, TC::LParen]) {
             self.offset -= 1;
+            let pos = self.peek_prev().offset;
             let func_name = self.peek_prev().lexeme_string()?;
             let args = self.parse_list_op()?;
-            return Ok(mkexpr(ExprCategory::Call(func_name, args)));
+            return Ok(mkexpr(ExprCategory::Call(func_name, args), pos));
         }
         if self.looking_at(&[TC::LParen]) {
             let expr = self.parse_or()?;
@@ -81,74 +85,80 @@ impl Parser {
             return Ok(expr);
         }
         if self.looking_at(&[TC::Not]) {
+            let pos = self.peek_prev().offset;
             let expr = self.parse_simple()?;
-            return Ok(mkexpr(ExprCategory::Not(Box::new(expr))));
+            return Ok(mkexpr(ExprCategory::Not(Box::new(expr)), pos));
         }
         if self.looking_at(&[TC::Var, TC::Is, TC::Null]) {
-            let var_name = self.peek_at(self.offset - 3).lexeme_string()?;
-            return Ok(mkexpr(ExprCategory::IsNull(var_name)));
+            let t = self.peek_at(self.offset - 3);
+            let pos = t.offset;
+            let var_name = t.lexeme_string()?;
+            return Ok(mkexpr(ExprCategory::IsNull(var_name), pos));
         }
         if self.looking_at(&[TC::Var, TC::Is, TC::Not, TC::Null]) {
-            let var_name = self.peek_at(self.offset - 4).lexeme_string()?;
-            let is_null = mkexpr(ExprCategory::IsNull(var_name));
-            return Ok(mkexpr(ExprCategory::Not(Box::new(is_null))));
+            let t = self.peek_at(self.offset - 4);
+            let pos = t.offset;
+            let var_name = t.lexeme_string()?;
+            let is_null = mkexpr(ExprCategory::IsNull(var_name), pos);
+            return Ok(mkexpr(ExprCategory::Not(Box::new(is_null)), pos));
         }
 
         let op1 = self.parse_op()?;
+        let pos = op1.pos;
         if self.looking_at(&[TC::In]) {
             let op2 = self.parse_op()?;
-            return Ok(mkexpr(ExprCategory::In(Box::new(op1), Box::new(op2))));
+            return Ok(mkexpr(ExprCategory::In(Box::new(op1), Box::new(op2)), pos));
         }
         if self.looking_at(&[TC::Not, TC::In]) {
             let op2 = self.parse_op()?;
-            let in_expr = mkexpr(ExprCategory::In(Box::new(op1), Box::new(op2)));
-            return Ok(mkexpr(ExprCategory::Not(Box::new(in_expr))));
+            let in_expr = mkexpr(ExprCategory::In(Box::new(op1), Box::new(op2)), pos);
+            return Ok(mkexpr(ExprCategory::Not(Box::new(in_expr)), pos));
         }
 
         if self.looking_at(&[TC::None, TC::Of]) {
             let op2 = self.parse_op()?;
             return Ok(mkexpr(ExprCategory::SetOp(
-                SetOp::NoneOf, Box::new(op1), Box::new(op2))));
+                SetOp::NoneOf, Box::new(op1), Box::new(op2)), pos));
         }
         if self.looking_at(&[TC::One, TC::Of]) {
             let op2 = self.parse_op()?;
             return Ok(mkexpr(ExprCategory::SetOp(
-                SetOp::OneOf, Box::new(op1), Box::new(op2))));
+                SetOp::OneOf, Box::new(op1), Box::new(op2)), pos));
         }
         if self.looking_at(&[TC::All, TC::Of]) {
             let op2 = self.parse_op()?;
             return Ok(mkexpr(ExprCategory::SetOp(
-                SetOp::AllOf, Box::new(op1), Box::new(op2))));
+                SetOp::AllOf, Box::new(op1), Box::new(op2)), pos));
         }
         if self.looking_at(&[TC::Eq]) {
             let op2 = self.parse_op()?;
             return Ok(mkexpr(ExprCategory::Compare(
-                CmpOp::Eq, Box::new(op1), Box::new(op2))));
+                CmpOp::Eq, Box::new(op1), Box::new(op2)), pos));
         }
         if self.looking_at(&[TC::Ne]) {
             let op2 = self.parse_op()?;
             return Ok(mkexpr(ExprCategory::Compare(
-                CmpOp::Ne, Box::new(op1), Box::new(op2))));
+                CmpOp::Ne, Box::new(op1), Box::new(op2)), pos));
         }
         if self.looking_at(&[TC::Lt]) {
             let op2 = self.parse_op()?;
             return Ok(mkexpr(ExprCategory::Compare(
-                CmpOp::Lt, Box::new(op1), Box::new(op2))));
+                CmpOp::Lt, Box::new(op1), Box::new(op2)), pos));
         }
         if self.looking_at(&[TC::Le]) {
             let op2 = self.parse_op()?;
             return Ok(mkexpr(ExprCategory::Compare(
-                CmpOp::Le, Box::new(op1), Box::new(op2))));
+                CmpOp::Le, Box::new(op1), Box::new(op2)), pos));
         }
         if self.looking_at(&[TC::Gt]) {
             let op2 = self.parse_op()?;
             return Ok(mkexpr(ExprCategory::Compare(
-                CmpOp::Gt, Box::new(op1), Box::new(op2))));
+                CmpOp::Gt, Box::new(op1), Box::new(op2)), pos));
         }
         if self.looking_at(&[TC::Ge]) {
             let op2 = self.parse_op()?;
             return Ok(mkexpr(ExprCategory::Compare(
-                CmpOp::Ge, Box::new(op1), Box::new(op2))));
+                CmpOp::Ge, Box::new(op1), Box::new(op2)), pos));
         }
 
         return Ok(op1);
@@ -157,8 +167,10 @@ impl Parser {
 
     fn parse_op(&mut self) -> Result<UntypedExpr> {
         if self.looking_at(&[TC::Var]) {
-            let var_name = self.peek_prev().lexeme_string()?;
-            return Ok(mkexpr(ExprCategory::Var(var_name)));
+            let t = self.peek_prev();
+            let pos = t.offset;
+            let var_name = t.lexeme_string()?;
+            return Ok(mkexpr(ExprCategory::Var(var_name), pos));
         }
         if self.looking_at(&[TC::IntLiteral]) ||
             self.looking_at(&[TC::FloatLiteral]) ||
@@ -176,16 +188,22 @@ impl Parser {
 
     fn parse_lit(&mut self) -> Result<UntypedExpr> {
         if self.looking_at(&[TC::IntLiteral]) {
-            let val = self.peek_prev().lexeme_i64()?;
-            return Ok(mkexpr(ExprCategory::Int(val)));
+            let t = self.peek_prev();
+            let pos = t.offset;
+            let val = t.lexeme_i64()?;
+            return Ok(mkexpr(ExprCategory::Int(val), pos));
         }
         if self.looking_at(&[TC::FloatLiteral]) {
-            let val = self.peek_prev().lexeme_f64()?;
-            return Ok(mkexpr(ExprCategory::Float(val)));
+            let t = self.peek_prev();
+            let pos = t.offset;
+            let val = t.lexeme_f64()?;
+            return Ok(mkexpr(ExprCategory::Float(val), pos));
         }
         if self.looking_at(&[TC::StrLiteral]) {
-            let val = self.peek_prev().lexeme_string()?;
-            return Ok(mkexpr(ExprCategory::Str(val)));
+            let t = self.peek_prev();
+            let pos = t.offset;
+            let val = t.lexeme_string()?;
+            return Ok(mkexpr(ExprCategory::Str(val), pos));
         }
         return Err(Error::InvalidOperator(self.offset));
     }
@@ -215,7 +233,7 @@ impl Parser {
             return Err(Error::InvalidToken(self.offset));
         }
 
-        return Ok(mkexpr(ExprCategory::List(exprs)));
+        return Ok(mkexpr(ExprCategory::List(exprs), initial_offset));
     }
 
 

@@ -58,7 +58,7 @@ fn make_symtable() -> Symtable {
     st.add("latitude".to_string(), Type::Float);
     st.add("longitude".to_string(), Type::Float);
     st.add("device_located".to_string(), Type::Bool);
-    st.add("ag_rank".to_string(), Type::Float);
+    st.add("ag_rank".to_string(), Type::Int);
     st.add("sitelist_ids".to_string(), Type::List(Box::new(Type::Int)));
     st.add("adgear_segments".to_string(), Type::List(Box::new(Type::Int)));
     //st.add("segments_with_timestamp".to_string(), Type::Segments);

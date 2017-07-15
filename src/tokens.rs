@@ -1,3 +1,5 @@
+use std::fmt;
+
 use errors::{Error, Result};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -17,6 +19,37 @@ pub enum TokenCategory {
     Eof
 }
 
+
+impl fmt::Display for TokenCategory {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            TokenCategory::Not => write!(f, "'not'"),
+            TokenCategory::And => write!(f, "'and'"),
+            TokenCategory::Or => write!(f, "'or'"),
+            TokenCategory::None => write!(f, "'none'"),
+            TokenCategory::One => write!(f, "'one'"),
+            TokenCategory::All => write!(f, "'all'"),
+            TokenCategory::Of => write!(f, "'of'"),
+            TokenCategory::Is => write!(f, "'is'"),
+            TokenCategory::Null => write!(f, "'null'"),
+            TokenCategory::In => write!(f, "'in'"),
+            TokenCategory::Eq => write!(f, "'='"),
+            TokenCategory::Ne => write!(f, "'<>'"),
+            TokenCategory::Lt => write!(f, "'<'"),
+            TokenCategory::Le => write!(f, "'<='"),
+            TokenCategory::Gt => write!(f, "'>'"),
+            TokenCategory::Ge => write!(f, "'>='"),
+            TokenCategory::LParen => write!(f, "'('"),
+            TokenCategory::RParen => write!(f, "')'"),
+            TokenCategory::Comma => write!(f, "','"),
+            TokenCategory::IntLiteral => write!(f, "'int literal'"),
+            TokenCategory::StrLiteral => write!(f, "'str literal'"),
+            TokenCategory::FloatLiteral => write!(f, "'float literal'"),
+            TokenCategory::Var => write!(f, "'var'"),
+            TokenCategory::Eof => write!(f, "<eof>"),
+        }
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Token {
