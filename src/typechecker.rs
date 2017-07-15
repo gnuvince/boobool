@@ -124,27 +124,48 @@ fn tc_list(exprs: Vec<UntypedExpr>, pos: usize, st: &Symtable) -> Result<TypedEx
 
 
 fn tc_compare(op: CmpOp, e1: UntypedExpr, e2: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
+    enum CmpValidity { Ok, DisallowedOperation, TypeMismatch };
+
     let te1 = tc_expr(e1, st)?;
     let te2 = tc_expr(e2, st)?;
 
-    let is_ok = match (&te1.ty, &te2.ty) {
-        (&Type::Int, &Type::Int) => true,
-        (&Type::Float, &Type::Float) => true,
-        (&Type::Str, &Type::Str) =>
-            op == CmpOp::Eq || op == CmpOp::Ne,
-        _ => false
-    };
+    let validity =
+        if te1.ty == Type::Int || te1.ty == Type::Float {
+            if te1.ty == te2.ty {
+                CmpValidity::Ok
+            } else {
+                CmpValidity::TypeMismatch
+            }
+        } else if te1.ty == Type::Str {
+            if op == CmpOp::Eq || op == CmpOp::Ne {
+                if te2.ty == Type::Str {
+                    CmpValidity::Ok
+                } else {
+                    CmpValidity::TypeMismatch
+                }
+            } else {
+                CmpValidity::DisallowedOperation
+            }
+        } else {
+            CmpValidity::DisallowedOperation
+        };
 
     let pos = te1.pos;
-    // TODO(vfoley): gives confusing error message when comparing two strings
-    if !is_ok {
-        return Err(Error::IncorrectType(te2.pos, te1.ty, te2.ty));
+    match validity {
+        CmpValidity::Ok => {
+            return Ok(TypedExpr {
+                expr: ExprCategory::Compare(op, Box::new(te1), Box::new(te2)),
+                pos: pos,
+                ty: Type::Bool
+            });
+        }
+        CmpValidity::DisallowedOperation => {
+            return Err(Error::InvalidOperation(pos));
+        }
+        CmpValidity::TypeMismatch => {
+            return Err(Error::IncorrectType(te2.pos, te1.ty, te2.ty));
+        }
     }
-    return Ok(TypedExpr {
-        expr: ExprCategory::Compare(op, Box::new(te1), Box::new(te2)),
-        pos: pos,
-        ty: Type::Bool
-    });
 }
 
 
@@ -287,6 +308,19 @@ fn test_compare() {
     assert!(test::tc(b"b <= b").is_err());
     assert!(test::tc(b"b > b").is_err());
     assert!(test::tc(b"b >= b").is_err());
+
+    assert!(match test::tc(b"3 = 'foo'") {
+        Err(Error::IncorrectType(_, _, _)) => true,
+        _ => false
+    });
+    assert!(match test::tc(b"'foo' = 3") {
+        Err(Error::IncorrectType(_, _, _)) => true,
+        _ => false
+    });
+    assert!(match test::tc(b"'foo' < 3") {
+        Err(Error::InvalidOperation(_)) => true,
+        _ => false
+    });
 }
 
 
