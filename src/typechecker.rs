@@ -3,7 +3,16 @@ use errors::{Result, Error};
 use types::{Type, Symtable};
 
 
-pub fn tc_expr(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
+pub fn typecheck(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
+    let texpr = tc_expr(expr, st)?;
+    if texpr.ty != Type::Bool {
+        return Err(Error::ExpressionMustBeBool(0));
+    }
+    return Ok(texpr);
+}
+
+
+fn tc_expr(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
     match expr.expr {
         ExprCategory::Var(v) => {
             let ty = match st.get(&v) {
@@ -345,10 +354,21 @@ fn test_call() {
     assert!(test::tc(b"il(3)").is_err());
 }
 
+#[test]
+fn test_expr_is_bool() {
+    assert!(test::tc(b"b").is_ok());
+    assert!(test::tc(b"has_len('foo', 3)").is_ok());
+    assert!(test::tc(b"i").is_err());
+    assert!(test::tc(b"f").is_err());
+    assert!(test::tc(b"s").is_err());
+    assert!(test::tc(b"il").is_err());
+    assert!(test::tc(b"sl").is_err());
+}
+
 
 #[cfg(test)]
 mod test {
-    use super::tc_expr;
+    use super::typecheck;
     use ast::TypedExpr;
     use errors::Result;
     use parser::Parser;
@@ -367,6 +387,6 @@ mod test {
         st.add("sl".to_string(), Type::List(Box::new(Type::Str)));
         st.add("has_len".to_string(),
                Type::Func(vec![Type::Str, Type::Int], Box::new(Type::Bool)));
-        return tc_expr(uexpr, &st);
+        return typecheck(uexpr, &st);
     }
 }

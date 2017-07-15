@@ -24,6 +24,7 @@ pub enum Error {
     InvalidOperator(usize),
 
     // Type checker errors
+    ExpressionMustBeBool(usize),
     EmptyList(usize),
     IncorrectType(usize, Type, Type),
     InvalidListType(usize, Type),
@@ -51,6 +52,7 @@ impl Error {
             | Error::UnterminatedList(x)
             | Error::InvalidOperation(x)
             | Error::InvalidOperator(x)
+            | Error::ExpressionMustBeBool(x)
             | Error::EmptyList(x)
             | Error::IncorrectType(x, _, _)
             | Error::InvalidListType(x, _)
@@ -98,6 +100,7 @@ impl E for Error {
             Error::InvalidOperation(_) => "invalid operation",
             Error::InvalidOperator(_) => "invalid operator",
 
+            Error::ExpressionMustBeBool(_) => "expression must have type bool",
             Error::EmptyList(_) => "cannot type an empty list",
             Error::IncorrectType(_, _, _) => "incorrect type",
             Error::InvalidListType(_, _) => "only lists of ints and strings are allowed",
