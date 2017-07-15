@@ -32,7 +32,7 @@ pub enum Error {
     IncorrectArgListLength(usize, usize, usize),
 
     // Symbol table errors
-    UndeclaredVariable(String),
+    UndeclaredVariable(Option<usize>, String),
 }
 
 
@@ -57,8 +57,7 @@ impl Error {
             | Error::InvalidSetOperation(x)
             | Error::NotAFunction(x, _)
             | Error::IncorrectArgListLength(x, _, _) => Some(x),
-
-            _ => None,
+            Error::UndeclaredVariable(x, _) => x,
         }
     }
 
@@ -74,7 +73,7 @@ impl Error {
                 format!("{}", name),
             Error::IncorrectArgListLength(_, exp, act) =>
                 format!("expected {}, found {}", exp, act),
-            Error::UndeclaredVariable(ref name) =>
+            Error::UndeclaredVariable(_, ref name) =>
                 format!("{}", name),
             _ =>
                 String::new()
@@ -106,7 +105,7 @@ impl E for Error {
             Error::NotAFunction(_, _) => "not a function",
             Error::IncorrectArgListLength(_, _, _) => "incorrect number of arguments",
 
-            Error::UndeclaredVariable(_) => "undeclared variable",
+            Error::UndeclaredVariable(_, _) => "undeclared variable",
         }
     }
 }

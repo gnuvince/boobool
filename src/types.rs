@@ -47,7 +47,8 @@ impl Symtable {
 
 
     pub fn get(&self, var: &str) -> Result<Type> {
-        let ty = self.symbols.get(var).ok_or(Error::UndeclaredVariable(var.to_owned()))?;
+        let ty = self.symbols.get(var)
+            .ok_or(Error::UndeclaredVariable(None, var.to_owned()))?;
         return Ok(ty.clone());
     }
 }

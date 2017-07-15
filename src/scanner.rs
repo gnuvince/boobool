@@ -218,7 +218,7 @@ fn test_scanner_whitespace() {
 #[test]
 fn test_scanner_err() {
     assert!(match Scanner::scan(b"&".to_vec()) {
-        Err(Error::UnknownCharacter(b'&', _)) => true,
+        Err(Error::UnknownCharacter(_, b'&')) => true,
         _ => false
     });
 
