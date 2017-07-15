@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt;
+use std::convert::Into;
 
 use errors::{Error, Result};
 
@@ -41,8 +42,10 @@ impl Symtable {
     }
 
 
-    pub fn add(&mut self, var: String, ty: Type) {
-        self.symbols.insert(var, ty);
+    pub fn add<T>(&mut self, var: T, ty: Type)
+        where T: Into<String>
+    {
+        self.symbols.insert(var.into(), ty);
     }
 
 

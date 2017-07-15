@@ -379,13 +379,13 @@ mod test {
         let toks = Scanner::scan(input.to_vec())?;
         let uexpr = Parser::parse(toks)?;
         let mut st = Symtable::new();
-        st.add("b".to_string(), Type::Bool);
-        st.add("i".to_string(), Type::Int);
-        st.add("f".to_string(), Type::Float);
-        st.add("s".to_string(), Type::Str);
-        st.add("il".to_string(), Type::List(Box::new(Type::Int)));
-        st.add("sl".to_string(), Type::List(Box::new(Type::Str)));
-        st.add("has_len".to_string(),
+        st.add("b", Type::Bool);
+        st.add("i", Type::Int);
+        st.add("f", Type::Float);
+        st.add("s", Type::Str);
+        st.add("il", Type::List(Box::new(Type::Int)));
+        st.add("sl", Type::List(Box::new(Type::Str)));
+        st.add("has_len",
                Type::Func(vec![Type::Str, Type::Int], Box::new(Type::Bool)));
         return typecheck(uexpr, &st);
     }
