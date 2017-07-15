@@ -16,9 +16,9 @@ fn tc_expr(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
     match expr.expr {
         ExprCategory::Var(v) => {
             let ty = match st.get(&v) {
-                Ok(t) => t,
-                Err(_) => {
-                    return Err(Error::UndeclaredVariable(Some(expr.pos), v.clone()))
+                Some(t) => t,
+                None => {
+                    return Err(Error::UndeclaredVariable(expr.pos, v))
                 }
             };
             Ok(TypedExpr {
@@ -215,7 +215,8 @@ fn tc_set_op(op: SetOp, e1: UntypedExpr, e2: UntypedExpr, st: &Symtable) -> Resu
 
 
 fn tc_is_null(var: String, pos: usize, st: &Symtable) -> Result<TypedExpr> {
-    let _ = st.get(&var)?;
+    let _ = st.get(&var)
+        .ok_or(Error::UndeclaredVariable(pos, var.clone()))?;
     return Ok(TypedExpr {
         expr: ExprCategory::IsNull(var),
         pos: pos,
@@ -240,7 +241,8 @@ fn tc_bool_vec(exprs: Vec<UntypedExpr>, st: &Symtable) -> Result<Vec<TypedExpr>>
 fn tc_call(func_name: String, args: Vec<UntypedExpr>, pos: usize, st: &Symtable) -> Result<TypedExpr> {
     let mut targs = Vec::with_capacity(args.len());
 
-    let func_type = st.get(&func_name)?;
+    let func_type = st.get(&func_name)
+        .ok_or(Error::UndeclaredVariable(pos, func_name.clone()))?;
     let (expected, result) = match func_type {
         Type::Func(args, res) => (args, res),
         _ => { return Err(Error::NotAFunction(pos, func_name)) }

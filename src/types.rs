@@ -2,8 +2,6 @@ use std::collections::HashMap;
 use std::fmt;
 use std::convert::Into;
 
-use errors::{Error, Result};
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Bool,
@@ -49,9 +47,7 @@ impl Symtable {
     }
 
 
-    pub fn get(&self, var: &str) -> Result<Type> {
-        let ty = self.symbols.get(var)
-            .ok_or(Error::UndeclaredVariable(None, var.to_owned()))?;
-        return Ok(ty.clone());
+    pub fn get(&self, var: &str) -> Option<Type> {
+        return self.symbols.get(var).map(|ty| ty.clone());
     }
 }

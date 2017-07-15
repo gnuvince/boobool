@@ -33,7 +33,7 @@ pub enum Error {
     IncorrectArgListLength(usize, usize, usize),
 
     // Symbol table errors
-    UndeclaredVariable(Option<usize>, String),
+    UndeclaredVariable(usize, String),
 }
 
 
@@ -58,8 +58,8 @@ impl Error {
             | Error::InvalidListType(x, _)
             | Error::InvalidSetOperation(x)
             | Error::NotAFunction(x, _)
+            | Error::UndeclaredVariable(x, _)
             | Error::IncorrectArgListLength(x, _, _) => Some(x),
-            Error::UndeclaredVariable(x, _) => x,
         }
     }
 
