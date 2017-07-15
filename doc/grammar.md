@@ -3,7 +3,17 @@ some constructs that rtb-boolean would refuse, such as `x = y`
 or `x not in y` are accepted by boobool.
 
 The grammar below was crafted to be relatively easy to implement
-in a hand-written scanner and parser.
+in a hand-written scanner and parser.  Specifically, the grammar
+has been written to have no left recursion.
+
+The syntax of rtb-boolean makes some constructs difficult to implement.
+For instance, because an expression can be parenthesized and lists use
+parentheses to enclose their elements, we don't know if an opening
+parenthesis denotes an expression or a list; in addition, is `(1)`
+the expression `1` in parentheses or the list containing the element
+`1`?  The definitions below thus disallow having a compound expression
+start with a list.  `(1, 2, 3) one of (3, 4, 5)` is invalid, however
+`x one of (3, 4, 5)` is fine.
 
 
 ```
