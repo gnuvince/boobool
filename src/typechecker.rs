@@ -336,6 +336,15 @@ fn test_set_ops() {
     assert!(test::tc(b"s all of  (1, 2, 3)").is_err());
 }
 
+#[test]
+fn test_call() {
+    assert!(test::tc(b"has_len('foo', 3)").is_ok());
+    assert!(test::tc(b"has_len('foo')").is_err());
+    assert!(test::tc(b"has_len('foo', 3, 4)").is_err());
+    assert!(test::tc(b"has_len(3, 'foo')").is_err());
+    assert!(test::tc(b"il(3)").is_err());
+}
+
 
 #[cfg(test)]
 mod test {
