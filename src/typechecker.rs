@@ -15,7 +15,7 @@ pub fn typecheck(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
 fn tc_expr(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
     match expr.expr {
         ExprCategory::Var(v) => {
-            let ty = match st.get(&v) {
+            let ty = match st.get_type(&v) {
                 Some(t) => t,
                 None => {
                     return Err(Error::UndeclaredVariable(expr.pos, v))
@@ -215,7 +215,7 @@ fn tc_set_op(op: SetOp, e1: UntypedExpr, e2: UntypedExpr, st: &Symtable) -> Resu
 
 
 fn tc_is_null(var: String, pos: usize, st: &Symtable) -> Result<TypedExpr> {
-    let _ = st.get(&var)
+    let _ = st.get_type(&var)
         .ok_or(Error::UndeclaredVariable(pos, var.clone()))?;
     return Ok(TypedExpr {
         expr: ExprCategory::IsNull(var),
@@ -241,7 +241,7 @@ fn tc_bool_vec(exprs: Vec<UntypedExpr>, st: &Symtable) -> Result<Vec<TypedExpr>>
 fn tc_call(func_name: String, args: Vec<UntypedExpr>, pos: usize, st: &Symtable) -> Result<TypedExpr> {
     let mut targs = Vec::with_capacity(args.len());
 
-    let func_type = st.get(&func_name)
+    let func_type = st.get_type(&func_name)
         .ok_or(Error::UndeclaredVariable(pos, func_name.clone()))?;
     let (expected, result) = match func_type {
         Type::Func(args, res) => (args, res),
@@ -409,20 +409,20 @@ mod test {
     use errors::Result;
     use parser::Parser;
     use scanner::Scanner;
-    use types::{Symtable, Type};
+    use types::{Nullable, Symtable, Type};
 
     pub fn tc(input: &[u8]) -> Result<TypedExpr> {
         let toks = Scanner::scan(input.to_vec())?;
         let uexpr = Parser::parse(toks)?;
         let mut st = Symtable::new();
-        st.add("b", Type::Bool);
-        st.add("i", Type::Int);
-        st.add("f", Type::Float);
-        st.add("s", Type::Str);
-        st.add("il", Type::List(Box::new(Type::Int)));
-        st.add("sl", Type::List(Box::new(Type::Str)));
+        st.add("b", Type::Bool, Nullable::No);
+        st.add("i", Type::Int, Nullable::No);
+        st.add("f", Type::Float, Nullable::No);
+        st.add("s", Type::Str, Nullable::No);
+        st.add("il", Type::List(Box::new(Type::Int)), Nullable::No);
+        st.add("sl", Type::List(Box::new(Type::Str)), Nullable::No);
         st.add("has_len",
-               Type::Func(vec![Type::Str, Type::Int], Box::new(Type::Bool)));
+               Type::Func(vec![Type::Str, Type::Int], Box::new(Type::Bool)), Nullable::No);
         return typecheck(uexpr, &st);
     }
 }
