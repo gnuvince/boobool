@@ -7,7 +7,7 @@ pub type UntypedExpr = Expr<()>;
 pub type TypedExpr = Expr<Type>;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Expr<T> {
     pub expr: ExprCategory<T>,
     pub pos: usize, // use `pos` here to not be confused with `offset` in the parser
@@ -15,7 +15,7 @@ pub struct Expr<T> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ExprCategory<T> {
     // Base expressions
     Var(String),
