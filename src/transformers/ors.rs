@@ -2,12 +2,7 @@ use ast::{CmpOp, ExprCategory, SetOp, TypedExpr};
 use types::{Symtable, Type};
 
 
-pub fn transform(mut expr: TypedExpr, st: &Symtable) -> TypedExpr {
-    expr = transform_ors(expr, st);
-    return expr;
-}
-
-fn transform_ors(expr: TypedExpr, st: &Symtable) -> TypedExpr {
+pub fn transform_ors(expr: TypedExpr, st: &Symtable) -> TypedExpr {
     match expr.expr {
         ExprCategory::Or(subexprs) => {
             if subst_equalities(&subexprs) {

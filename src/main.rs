@@ -3,7 +3,7 @@ extern crate boobool;
 use boobool::errors::Result;
 use boobool::parser;
 use boobool::scanner;
-use boobool::transform;
+use boobool::transformers;
 use boobool::typechecker;
 use boobool::types::{Type, Nullable, Symtable};
 
@@ -31,7 +31,7 @@ fn run() -> Result<()> {
         let toks = scanner::Scanner::scan(bytes)?;
         let expr = parser::Parser::parse(toks)?;
         let texpr = typechecker::typecheck(expr, &st)?;
-        let texpr = transform::transform(texpr, &st);
+        let texpr = transformers::transform(texpr, &st);
         println!("{}", texpr);
         buf.clear();
     }
