@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use ast::{ExprCategory, TypedExpr};
 use types::{Nullable, Type, Symtable};
 
@@ -9,7 +11,7 @@ pub fn insert_null_checks(expr: TypedExpr, st: &Symtable) -> TypedExpr {
 
 
 // TODO(vfoley): reduce the amount of repeated code
-fn rewrite(expr: TypedExpr, st: &Symtable) -> (Vec<String>, TypedExpr) {
+fn rewrite(expr: TypedExpr, st: &Symtable) -> (HashSet<String>, TypedExpr) {
     match expr.expr {
         ExprCategory::Var(s) => {
             let new_expr = TypedExpr {
@@ -18,9 +20,13 @@ fn rewrite(expr: TypedExpr, st: &Symtable) -> (Vec<String>, TypedExpr) {
                 ty: expr.ty
             };
             match st.get_nullable(&s) {
-                None => (vec![], new_expr),
-                Some(Nullable::No) => (vec![], new_expr),
-                Some(Nullable::Yes) => (vec![s], new_expr)
+                None => (HashSet::new(), new_expr),
+                Some(Nullable::No) => (HashSet::new(), new_expr),
+                Some(Nullable::Yes) => {
+                    let mut set = HashSet::new();
+                    set.insert(s);
+                    (set, new_expr)
+                }
             }
         }
 
@@ -45,7 +51,7 @@ fn rewrite(expr: TypedExpr, st: &Symtable) -> (Vec<String>, TypedExpr) {
         }
 
         ExprCategory::Call(func_name, args) => {
-            let mut nullables = Vec::new();
+            let mut nullables = HashSet::new();
             let mut rewritten_args = Vec::new();
             for arg in args {
                 let (nullables_arg, arg) = rewrite(arg, st);
@@ -59,7 +65,7 @@ fn rewrite(expr: TypedExpr, st: &Symtable) -> (Vec<String>, TypedExpr) {
         }
 
         ExprCategory::Or(subexprs) => {
-            let mut nullables = Vec::new();
+            let mut nullables = HashSet::new();
             let mut rewritten_subexprs = Vec::new();
             for subexpr in subexprs {
                 let (nullables_subexpr, subexpr) = rewrite(subexpr, st);
@@ -71,14 +77,14 @@ fn rewrite(expr: TypedExpr, st: &Symtable) -> (Vec<String>, TypedExpr) {
                 .. expr
             };
             if nullables.is_empty() {
-                (vec![], rewritten_expr)
+                (HashSet::new(), rewritten_expr)
             } else {
-                (vec![], make_checks(nullables, rewritten_expr))
+                (HashSet::new(), make_checks(nullables, rewritten_expr))
             }
         }
 
         ExprCategory::And(subexprs) => {
-            let mut nullables = Vec::new();
+            let mut nullables = HashSet::new();
             let mut rewritten_subexprs = Vec::new();
             for subexpr in subexprs {
                 let (nullables_subexpr, subexpr) = rewrite(subexpr, st);
@@ -89,7 +95,7 @@ fn rewrite(expr: TypedExpr, st: &Symtable) -> (Vec<String>, TypedExpr) {
                 expr: ExprCategory::And(rewritten_subexprs),
                 .. expr
             };
-            (vec![], make_checks(nullables, rewritten_expr))
+            (HashSet::new(), make_checks(nullables, rewritten_expr))
         }
 
         ExprCategory::Not(subexpr) => {
@@ -98,15 +104,15 @@ fn rewrite(expr: TypedExpr, st: &Symtable) -> (Vec<String>, TypedExpr) {
                 expr: ExprCategory::Not(Box::new(subexpr)),
                 .. expr
             };
-            (vec![], make_checks(nullables, rewritten_expr))
+            (HashSet::new(), make_checks(nullables, rewritten_expr))
         }
 
-        _ => (vec![], expr)
+        _ => (HashSet::new(), expr)
     }
 }
 
 
-fn make_checks(nullables: Vec<String>, expr: TypedExpr) -> TypedExpr {
+fn make_checks(nullables: HashSet<String>, expr: TypedExpr) -> TypedExpr {
     if nullables.is_empty() {
         return expr;
     }
@@ -139,6 +145,8 @@ fn test_insert_null_checks() {
     assert_eq!("(not opt_n is null and opt_n = 3)", test::null_check(b"opt_n = 3"));
     assert_eq!("b", test::null_check(b"b"));
     assert_eq!("(not opt_b is null and opt_b)", test::null_check(b"opt_b"));
+    assert_eq!("(not opt_b is null and (opt_b and opt_b))",
+               test::null_check(b"opt_b and opt_b"));
     assert_eq!("s in ('a', 'b')", test::null_check(b"s in ('a', 'b')"));
     assert_eq!("(not opt_s is null and opt_s in ('a', 'b'))",
                test::null_check(b"opt_s in ('a', 'b')"));
