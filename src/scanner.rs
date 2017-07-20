@@ -39,20 +39,11 @@ impl Scanner {
         if self.looking_at(b"<")    { return Ok(Token::new(TC::Lt, None, self.offset)); }
         if self.looking_at(b">")    { return Ok(Token::new(TC::Gt, None, self.offset)); }
         if self.looking_at(b",")    { return Ok(Token::new(TC::Comma, None, self.offset)); }
-        if self.looking_at(b"not")  { return Ok(Token::new(TC::Not, None, self.offset)); }
-        if self.looking_at(b"and")  { return Ok(Token::new(TC::And, None, self.offset)); }
-        if self.looking_at(b"or")   { return Ok(Token::new(TC::Or, None, self.offset)); }
-        if self.looking_at(b"none") { return Ok(Token::new(TC::None, None, self.offset)); }
-        if self.looking_at(b"one")  { return Ok(Token::new(TC::One, None, self.offset)); }
-        if self.looking_at(b"all")  { return Ok(Token::new(TC::All, None, self.offset)); }
-        if self.looking_at(b"of")   { return Ok(Token::new(TC::Of, None, self.offset)); }
-        if self.looking_at(b"is")   { return Ok(Token::new(TC::Is, None, self.offset)); }
-        if self.looking_at(b"null") { return Ok(Token::new(TC::Null, None, self.offset)); }
         if self.looking_at(b"in")   { return Ok(Token::new(TC::In, None, self.offset)); }
         if self.peek() == b'"'      { return self.scan_string(b'"'); }
         if self.peek() == b'\''     { return self.scan_string(b'\''); }
         if is_digit(self.peek())    { return self.scan_number(); }
-        if is_alpha(self.peek())    { return self.scan_var(); }
+        if is_alpha(self.peek())    { return self.scan_var_or_keyword(); }
         return Err(Error::UnknownCharacter(self.offset, self.peek()));
     }
 
@@ -74,7 +65,7 @@ impl Scanner {
     }
 
 
-    fn scan_var(&mut self) -> Result<Token> {
+    fn scan_var_or_keyword(&mut self) -> Result<Token> {
         let mut buf = String::new();
         let initial_offset = self.offset;
 
@@ -82,6 +73,16 @@ impl Scanner {
             buf.push(self.peek() as char);
             self.offset += 1;
         }
+
+        if buf == "not"  { return Ok(Token::new(TC::Not, None, initial_offset)); }
+        if buf == "and"  { return Ok(Token::new(TC::And, None, initial_offset)); }
+        if buf == "or"   { return Ok(Token::new(TC::Or, None, initial_offset)); }
+        if buf == "none" { return Ok(Token::new(TC::None, None, initial_offset)); }
+        if buf == "one"  { return Ok(Token::new(TC::One, None, initial_offset)); }
+        if buf == "all"  { return Ok(Token::new(TC::All, None, initial_offset)); }
+        if buf == "of"   { return Ok(Token::new(TC::Of, None, initial_offset)); }
+        if buf == "is"   { return Ok(Token::new(TC::Is, None, initial_offset)); }
+        if buf == "null" { return Ok(Token::new(TC::Null, None, initial_offset)); }
 
         return Ok(Token::new(TC::Var, Some(buf), initial_offset));
     }
@@ -194,6 +195,11 @@ fn test_scanner_basic_tokens() {
     assert!(Scanner::scan(b"\"\"".to_vec()).is_ok());
     assert!(Scanner::scan(b"\"hello\"".to_vec()).is_ok());
     assert!(Scanner::scan(b"\"O'Reilly\"".to_vec()).is_ok());
+
+    assert!(match Scanner::scan(b"null_check".to_vec()) {
+        Ok(toks) => toks[0].cat == TC::Var,
+        Err(_) => false
+    });
 }
 
 #[test]
