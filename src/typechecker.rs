@@ -13,7 +13,7 @@ pub fn typecheck(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
 
 
 fn tc_expr(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
-    match expr.expr {
+    match expr.category {
         ExprCategory::Var(v) => {
             let ty = match st.get_type(&v) {
                 Some(t) => t,
@@ -22,26 +22,26 @@ fn tc_expr(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
                 }
             };
             Ok(TypedExpr {
-                expr: ExprCategory::Var(v),
+                category: ExprCategory::Var(v),
                 pos: expr.pos,
                 ty: ty
             })
         }
         ExprCategory::Int(x) =>
             Ok(TypedExpr {
-                expr: ExprCategory::Int(x),
+                category: ExprCategory::Int(x),
                 pos: expr.pos,
                 ty: Type::Int
             }),
         ExprCategory::Float(x) =>
             Ok(TypedExpr {
-                expr: ExprCategory::Float(x),
+                category: ExprCategory::Float(x),
                 pos: expr.pos,
                 ty: Type::Float
             }),
         ExprCategory::Str(s) =>
             Ok(TypedExpr {
-                expr: ExprCategory::Str(s),
+                category: ExprCategory::Str(s),
                 pos: expr.pos,
                 ty: Type::Str
             }),
@@ -60,7 +60,7 @@ fn tc_expr(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
         ExprCategory::And(exprs) => {
             let texprs = tc_bool_vec(exprs, st)?;
             Ok(TypedExpr {
-                expr: ExprCategory::And(texprs),
+                category: ExprCategory::And(texprs),
                 pos: expr.pos,
                 ty: Type::Bool
 
@@ -69,7 +69,7 @@ fn tc_expr(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
         ExprCategory::Or(exprs) => {
             let texprs = tc_bool_vec(exprs, st)?;
             Ok(TypedExpr {
-                expr: ExprCategory::Or(texprs),
+                category: ExprCategory::Or(texprs),
                 pos: expr.pos,
                 ty: Type::Bool
             })
@@ -85,7 +85,7 @@ fn tc_expr(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
             }
             let pos = texpr.pos;
             return Ok(TypedExpr {
-                expr: ExprCategory::Not(Box::new(texpr)),
+                category: ExprCategory::Not(Box::new(texpr)),
                 pos: pos,
                 ty: Type::Bool
             });
@@ -116,7 +116,7 @@ fn tc_list(exprs: Vec<UntypedExpr>, pos: usize, st: &Symtable) -> Result<TypedEx
     }
 
     return Ok(TypedExpr {
-        expr: ExprCategory::List(texprs),
+        category: ExprCategory::List(texprs),
         pos: pos,
         ty: Type::List(Box::new(ty))
     });
@@ -154,7 +154,7 @@ fn tc_compare(op: CmpOp, e1: UntypedExpr, e2: UntypedExpr, st: &Symtable) -> Res
     match validity {
         CmpValidity::Ok => {
             return Ok(TypedExpr {
-                expr: ExprCategory::Compare(op, Box::new(te1), Box::new(te2)),
+                category: ExprCategory::Compare(op, Box::new(te1), Box::new(te2)),
                 pos: pos,
                 ty: Type::Bool
             });
@@ -184,7 +184,7 @@ fn tc_in(needle: UntypedExpr, haystack: UntypedExpr, st: &Symtable) -> Result<Ty
         return Err(Error::InvalidSetOperation(pos));
     }
     return Ok(TypedExpr {
-        expr: ExprCategory::In(Box::new(te1), Box::new(te2)),
+        category: ExprCategory::In(Box::new(te1), Box::new(te2)),
         pos: pos,
         ty: Type::Bool
     });
@@ -207,7 +207,7 @@ fn tc_set_op(op: SetOp, e1: UntypedExpr, e2: UntypedExpr, st: &Symtable) -> Resu
         return Err(Error::InvalidSetOperation(pos));
     }
     return Ok(TypedExpr {
-        expr: ExprCategory::SetOp(op, Box::new(te1), Box::new(te2)),
+        category: ExprCategory::SetOp(op, Box::new(te1), Box::new(te2)),
         pos: pos,
         ty: Type::Bool
     });
@@ -218,7 +218,7 @@ fn tc_is_null(var: String, pos: usize, st: &Symtable) -> Result<TypedExpr> {
     let _ = st.get_type(&var)
         .ok_or(Error::UndeclaredVariable(pos, var.clone()))?;
     return Ok(TypedExpr {
-        expr: ExprCategory::IsNull(var),
+        category: ExprCategory::IsNull(var),
         pos: pos,
         ty: Type::Bool,
     });
@@ -260,7 +260,7 @@ fn tc_call(func_name: String, args: Vec<UntypedExpr>, pos: usize, st: &Symtable)
         targs.push(targ);
     }
     return Ok(TypedExpr {
-        expr: ExprCategory::Call(func_name, targs),
+        category: ExprCategory::Call(func_name, targs),
         pos: pos,
         ty: *result
     });

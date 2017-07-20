@@ -12,7 +12,7 @@ pub struct Parser {
 
 fn mkexpr(ec: ExprCategory<()>, pos: usize) -> UntypedExpr {
     return UntypedExpr {
-        expr: ec,
+        category: ec,
         pos: pos,
         ty: ()
     };

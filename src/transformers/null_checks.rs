@@ -12,10 +12,10 @@ pub fn insert_null_checks(expr: TypedExpr, st: &Symtable) -> TypedExpr {
 
 // TODO(vfoley): reduce the amount of repeated code
 fn rewrite(expr: TypedExpr, st: &Symtable) -> (HashSet<String>, TypedExpr) {
-    match expr.expr {
+    match expr.category {
         ExprCategory::Var(s) => {
             let new_expr = TypedExpr {
-                expr: ExprCategory::Var(s.clone()),
+                category: ExprCategory::Var(s.clone()),
                 pos: 0,
                 ty: expr.ty
             };
@@ -35,7 +35,7 @@ fn rewrite(expr: TypedExpr, st: &Symtable) -> (HashSet<String>, TypedExpr) {
             let (nullables_b, b) = rewrite(*b, st);
             nullables_a.extend(nullables_b);
             (nullables_a, TypedExpr {
-                expr: ExprCategory::Compare(op, Box::new(a), Box::new(b)),
+                category: ExprCategory::Compare(op, Box::new(a), Box::new(b)),
                 .. expr
             })
         }
@@ -45,7 +45,7 @@ fn rewrite(expr: TypedExpr, st: &Symtable) -> (HashSet<String>, TypedExpr) {
             let (nullables_b, b) = rewrite(*b, st);
             nullables_a.extend(nullables_b);
             (nullables_a, TypedExpr {
-                expr: ExprCategory::In(Box::new(a), Box::new(b)),
+                category: ExprCategory::In(Box::new(a), Box::new(b)),
                 .. expr
             })
         }
@@ -59,7 +59,7 @@ fn rewrite(expr: TypedExpr, st: &Symtable) -> (HashSet<String>, TypedExpr) {
                 nullables.extend(nullables_arg);
             }
             (nullables, TypedExpr {
-                expr: ExprCategory::Call(func_name, rewritten_args),
+                category: ExprCategory::Call(func_name, rewritten_args),
                 .. expr
             })
         }
@@ -73,7 +73,7 @@ fn rewrite(expr: TypedExpr, st: &Symtable) -> (HashSet<String>, TypedExpr) {
                 nullables.extend(nullables_subexpr);
             }
             let rewritten_expr = TypedExpr {
-                expr: ExprCategory::Or(rewritten_subexprs),
+                category: ExprCategory::Or(rewritten_subexprs),
                 .. expr
             };
             if nullables.is_empty() {
@@ -92,7 +92,7 @@ fn rewrite(expr: TypedExpr, st: &Symtable) -> (HashSet<String>, TypedExpr) {
                 nullables.extend(nullables_subexpr);
             }
             let rewritten_expr = TypedExpr {
-                expr: ExprCategory::And(rewritten_subexprs),
+                category: ExprCategory::And(rewritten_subexprs),
                 .. expr
             };
             (HashSet::new(), make_checks(nullables, rewritten_expr))
@@ -101,7 +101,7 @@ fn rewrite(expr: TypedExpr, st: &Symtable) -> (HashSet<String>, TypedExpr) {
         ExprCategory::Not(subexpr) => {
             let (nullables, subexpr) = rewrite(*subexpr, st);
             let rewritten_expr = TypedExpr {
-                expr: ExprCategory::Not(Box::new(subexpr)),
+                category: ExprCategory::Not(Box::new(subexpr)),
                 .. expr
             };
             (HashSet::new(), make_checks(nullables, rewritten_expr))
@@ -120,8 +120,8 @@ fn make_checks(nullables: HashSet<String>, expr: TypedExpr) -> TypedExpr {
     let mut clauses = Vec::new();
     for nullable in nullables {
         clauses.push(TypedExpr {
-            expr: ExprCategory::Not(Box::new(TypedExpr {
-                expr: ExprCategory::IsNull(nullable),
+            category: ExprCategory::Not(Box::new(TypedExpr {
+                category: ExprCategory::IsNull(nullable),
                 pos: 0,
                 ty: Type::Bool
             })),
@@ -131,7 +131,7 @@ fn make_checks(nullables: HashSet<String>, expr: TypedExpr) -> TypedExpr {
     }
     clauses.push(expr);
     return TypedExpr {
-        expr: ExprCategory::And(clauses),
+        category: ExprCategory::And(clauses),
         pos: 0,
         ty: Type::Bool
     };
