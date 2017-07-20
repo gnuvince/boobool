@@ -3,7 +3,7 @@ use types::{Symtable, Type};
 
 
 pub fn transform_ors(expr: TypedExpr, st: &Symtable) -> TypedExpr {
-    match expr.expr {
+    match expr.category {
         ExprCategory::Or(subexprs) => {
             if subst_equalities(&subexprs) {
                 if let Some(new_expr) = replace_equalities(&subexprs, st, expr.pos, expr.ty.clone()) {
@@ -16,7 +16,7 @@ pub fn transform_ors(expr: TypedExpr, st: &Symtable) -> TypedExpr {
                 }
             }
             return TypedExpr {
-                    expr: ExprCategory::Or(subexprs),
+                    category: ExprCategory::Or(subexprs),
                     pos: expr.pos,
                     ty: expr.ty
             };
@@ -26,7 +26,7 @@ pub fn transform_ors(expr: TypedExpr, st: &Symtable) -> TypedExpr {
                 .map(|e| transform_ors(e, st))
                 .collect();
             return TypedExpr {
-                    expr: ExprCategory::And(subexprs),
+                    category: ExprCategory::And(subexprs),
                     pos: expr.pos,
                     ty: expr.ty
             };
@@ -34,7 +34,7 @@ pub fn transform_ors(expr: TypedExpr, st: &Symtable) -> TypedExpr {
         ExprCategory::Not(subexpr) => {
             let subexpr = transform_ors(*subexpr, st);
             return TypedExpr {
-                    expr: ExprCategory::Not(Box::new(subexpr)),
+                    category: ExprCategory::Not(Box::new(subexpr)),
                     pos: expr.pos,
                     ty: expr.ty
             };
@@ -58,7 +58,7 @@ fn subst_equalities(exprs: &[TypedExpr]) -> bool {
     }
 
     for expr in exprs.iter() {
-        match expr.expr {
+        match expr.category {
             ExprCategory::Compare(CmpOp::Eq, _, _) => (),
             _ => { return false; }
         }
@@ -70,12 +70,12 @@ fn subst_equalities(exprs: &[TypedExpr]) -> bool {
     };
 
     for expr in exprs {
-        if let ExprCategory::Compare(CmpOp::Eq, ref e1, ref e2) = expr.expr {
-            if let ExprCategory::Var(ref s) = e1.expr {
+        if let ExprCategory::Compare(CmpOp::Eq, ref e1, ref e2) = expr.category {
+            if let ExprCategory::Var(ref s) = e1.category {
                 if *s != *var_name {
                     return false;
                 }
-            } else if let ExprCategory::Var(ref s) = e2.expr {
+            } else if let ExprCategory::Var(ref s) = e2.category {
                 if *s != *var_name {
                     return false;
                 }
@@ -104,10 +104,9 @@ fn replace_equalities(exprs: &[TypedExpr], st: &Symtable, pos: usize, ty: Type) 
 
     let mut consts = Vec::with_capacity(exprs.len());
     for expr in exprs {
-        match expr.expr {
-            // WTF
+        match expr.category {
             ExprCategory::Compare(CmpOp::Eq, ref e1, ref e2) => {
-                match (&e1.expr, &e2.expr) {
+                match (&e1.category, &e2.category) {
                     (&ExprCategory::Var(_), _) => consts.push((**e2).clone()),
                     (_, &ExprCategory::Var(_)) => consts.push((**e1).clone()),
                     (_, _) => { return None; }
@@ -118,18 +117,18 @@ fn replace_equalities(exprs: &[TypedExpr], st: &Symtable, pos: usize, ty: Type) 
     }
 
     let var = TypedExpr {
-        expr: ExprCategory::Var(var_name.to_string()),
+        category: ExprCategory::Var(var_name.to_string()),
         pos: pos,
         ty: var_ty.clone(),
     };
     let list = TypedExpr {
-        expr: ExprCategory::List(consts),
+        category: ExprCategory::List(consts),
         pos: pos,
         ty: Type::List(Box::new(var_ty))
     };
 
     return Some(TypedExpr {
-        expr: ExprCategory::In(
+        category: ExprCategory::In(
             Box::new(var),
             Box::new(list)
         ),
@@ -145,7 +144,7 @@ fn subst_ins(exprs: &[TypedExpr]) -> bool {
     }
 
     for expr in exprs.iter() {
-        match expr.expr {
+        match expr.category {
             ExprCategory::In(_, _) => (),
             _ => { return false; }
         }
@@ -157,8 +156,8 @@ fn subst_ins(exprs: &[TypedExpr]) -> bool {
     };
 
     for expr in exprs {
-        if let ExprCategory::In(_, ref e2) = expr.expr {
-            if let ExprCategory::Var(ref s) = e2.expr {
+        if let ExprCategory::In(_, ref e2) = expr.category {
+            if let ExprCategory::Var(ref s) = e2.category {
                 if *s != *var_name {
                     return false;
                 }
@@ -187,7 +186,7 @@ fn replace_ins(exprs: &[TypedExpr], st: &Symtable, pos: usize, ty: Type) -> Opti
 
     let mut consts = Vec::with_capacity(exprs.len());
     for expr in exprs {
-        if let ExprCategory::In(ref e1, _) = expr.expr {
+        if let ExprCategory::In(ref e1, _) = expr.category {
             consts.push((**e1).clone());
         } else {
             return None;
@@ -195,18 +194,18 @@ fn replace_ins(exprs: &[TypedExpr], st: &Symtable, pos: usize, ty: Type) -> Opti
     }
 
     let var = TypedExpr {
-        expr: ExprCategory::Var(var_name.to_string()),
+        category: ExprCategory::Var(var_name.to_string()),
         pos: pos,
         ty: var_ty.clone(),
     };
     let list = TypedExpr {
-        expr: ExprCategory::List(consts),
+        category: ExprCategory::List(consts),
         pos: pos,
         ty: Type::List(Box::new(var_ty))
     };
 
     return Some(TypedExpr {
-        expr: ExprCategory::SetOp(
+        category: ExprCategory::SetOp(
             SetOp::OneOf,
             Box::new(var),
             Box::new(list)
@@ -218,10 +217,10 @@ fn replace_ins(exprs: &[TypedExpr], st: &Symtable, pos: usize, ty: Type) -> Opti
 
 
 fn get_eq_var_name(expr: &TypedExpr) -> Option<&str> {
-    if let ExprCategory::Compare(CmpOp::Eq, ref e1, ref e2) = expr.expr {
-        if let ExprCategory::Var(ref s) = e1.expr {
+    if let ExprCategory::Compare(CmpOp::Eq, ref e1, ref e2) = expr.category {
+        if let ExprCategory::Var(ref s) = e1.category {
             return Some(s);
-        } else if let ExprCategory::Var(ref s) = e2.expr {
+        } else if let ExprCategory::Var(ref s) = e2.category {
             return Some(s);
         } else {
             return None;
@@ -233,8 +232,8 @@ fn get_eq_var_name(expr: &TypedExpr) -> Option<&str> {
 
 
 fn get_in_var_name(expr: &TypedExpr) -> Option<&str> {
-    if let ExprCategory::In(_, ref e2) = expr.expr {
-        if let ExprCategory::Var(ref s) = e2.expr {
+    if let ExprCategory::In(_, ref e2) = expr.category {
+        if let ExprCategory::Var(ref s) = e2.category {
             return Some(s);
         } else {
             return None;

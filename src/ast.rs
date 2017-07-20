@@ -9,7 +9,7 @@ pub type TypedExpr = Expr<Type>;
 
 #[derive(Debug, Clone)]
 pub struct Expr<T> {
-    pub expr: ExprCategory<T>,
+    pub category: ExprCategory<T>,
     pub pos: usize, // use `pos` here to not be confused with `offset` in the parser
     pub ty: T,
 }
@@ -119,6 +119,6 @@ impl <T> fmt::Display for ExprCategory<T> {
 
 impl <T> fmt::Display for Expr<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.expr)
+        write!(f, "{}", self.category)
     }
 }

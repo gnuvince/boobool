@@ -3,7 +3,7 @@ use types::Type;
 
 
 pub fn sort_lists(expr: TypedExpr) -> TypedExpr {
-    let new_cat = match expr.expr {
+    let new_cat = match expr.category {
         ExprCategory::List(subexprs) => {
             let sorted_subexprs = sort(subexprs, &expr.ty);
             ExprCategory::List(sorted_subexprs)
@@ -30,9 +30,9 @@ pub fn sort_lists(expr: TypedExpr) -> TypedExpr {
             ExprCategory::Not(subexpr)
         }
 
-        _ => expr.expr
+        _ => expr.category
     };
-    return TypedExpr { expr: new_cat, .. expr };
+    return TypedExpr { category: new_cat, .. expr };
 }
 
 
@@ -58,14 +58,14 @@ fn is_list_of(ty: &Type, elem_ty: Type) -> bool {
 fn sort_ints(exprs: Vec<TypedExpr>) -> Vec<TypedExpr> {
     let mut vals = Vec::with_capacity(exprs.len());
     for expr in exprs {
-        if let ExprCategory::Int(x) = expr.expr {
+        if let ExprCategory::Int(x) = expr.category {
             vals.push(x);
         }
     }
     vals.sort();
     return vals.into_iter()
         .map(|x| TypedExpr {
-            expr: ExprCategory::Int(x),
+            category: ExprCategory::Int(x),
             pos: 0,
             ty: Type::Int
         })
@@ -76,14 +76,14 @@ fn sort_ints(exprs: Vec<TypedExpr>) -> Vec<TypedExpr> {
 fn sort_strs(exprs: Vec<TypedExpr>) -> Vec<TypedExpr> {
     let mut vals = Vec::with_capacity(exprs.len());
     for expr in exprs {
-        if let ExprCategory::Str(x) = expr.expr {
+        if let ExprCategory::Str(x) = expr.category {
             vals.push(x);
         }
     }
     vals.sort();
     return vals.into_iter()
         .map(|x| TypedExpr {
-            expr: ExprCategory::Str(x),
+            category: ExprCategory::Str(x),
             pos: 0,
             ty: Type::Str
         })
