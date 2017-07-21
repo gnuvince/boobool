@@ -3,6 +3,11 @@ use errors::{Result, Error};
 use types::{Type, Symtable};
 
 
+/// Typechecks an untyped expression given a symbol table.
+/// A typed expression is returned (`UntypedExpr` and
+/// `TypedExpr` have the same internal representation; they
+/// are parametrizer by a different type to represent a
+/// Boolean type).
 pub fn typecheck(expr: UntypedExpr, st: &Symtable) -> Result<TypedExpr> {
     let texpr = tc_expr(expr, st)?;
     if texpr.ty != Type::Bool {

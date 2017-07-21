@@ -2,6 +2,7 @@ use std::fmt;
 
 use errors::{Error, Result};
 
+/// The categories of tokens for the Boolean language.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TokenCategory {
     // Keywords
@@ -51,6 +52,10 @@ impl fmt::Display for TokenCategory {
     }
 }
 
+
+/// A token of the Boolean language.  A token has a
+/// category, an optional lexeme (the string that yielded
+/// the token) and an offset (position).
 #[derive(Debug, PartialEq)]
 pub struct Token {
     pub cat: TokenCategory,
@@ -60,12 +65,14 @@ pub struct Token {
 
 
 impl Token {
+    /// Creates a new token object.
     pub fn new(cat: TokenCategory, lexeme: Option<String>, offset: usize)
                -> Token {
         return Token { cat, lexeme, offset };
     }
 
 
+    /// Returns the lexeme of a token as a string.
     pub fn lexeme_string(&self) -> Result<String> {
         self
             .lexeme
@@ -73,11 +80,15 @@ impl Token {
             .ok_or(Error::MissingLexeme(self.offset))
     }
 
+
+    /// Returns the lexeme of a token as an `i64`.
     pub fn lexeme_i64(&self) -> Result<i64> {
         let s = self.lexeme_string()?;
         return s.parse::<i64>().map_err(|_| Error::InvalidIntLiteral(self.offset));
     }
 
+
+    /// Returns the lexeme of a token as an `f64`.
     pub fn lexeme_f64(&self) -> Result<f64> {
         let s = self.lexeme_string()?;
         return s.parse::<f64>().map_err(|_| Error::InvalidFloatLiteral(self.offset));
