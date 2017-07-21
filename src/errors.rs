@@ -35,9 +35,10 @@ pub enum Error {
     // Symbol table errors
     UndeclaredVariable(usize, String),
 
-    // Environment validation errors
+    // Evaluation and environment errors
     CannotBeNull(String),
     EnvInvalidType(String, Type, Type),
+    EvalError,
 }
 
 
@@ -66,6 +67,7 @@ impl Error {
             | Error::IncorrectArgListLength(x, _, _) => Some(x),
             Error::CannotBeNull(_) => None,
             Error::EnvInvalidType(_, _, _) => None,
+            Error::EvalError => None,
         }
     }
 
@@ -123,6 +125,7 @@ impl E for Error {
 
             Error::CannotBeNull(_) => "variable cannot be null",
             Error::EnvInvalidType(_, _, _) => "invalid type for environment variable",
+            Error::EvalError => "evaluation error",
         }
     }
 }
