@@ -34,6 +34,10 @@ pub enum Error {
 
     // Symbol table errors
     UndeclaredVariable(usize, String),
+
+    // Environment validation errors
+    CannotBeNull(String),
+    EnvInvalidType(String, Type, Type),
 }
 
 
@@ -60,6 +64,8 @@ impl Error {
             | Error::NotAFunction(x, _)
             | Error::UndeclaredVariable(x, _)
             | Error::IncorrectArgListLength(x, _, _) => Some(x),
+            Error::CannotBeNull(_) => None,
+            Error::EnvInvalidType(_, _, _) => None,
         }
     }
 
@@ -77,6 +83,11 @@ impl Error {
                 format!("expected {}, found {}", exp, act),
             Error::UndeclaredVariable(_, ref name) =>
                 format!("{}", name),
+            Error::CannotBeNull(ref name) =>
+                format!("{}", name),
+            Error::EnvInvalidType(ref var, ref expected, ref actual) =>
+                format!("variable {}: expected {}, found {}",
+                        var, expected, actual),
             _ =>
                 String::new()
         }
@@ -109,6 +120,9 @@ impl E for Error {
             Error::IncorrectArgListLength(_, _, _) => "incorrect number of arguments",
 
             Error::UndeclaredVariable(_, _) => "undeclared variable",
+
+            Error::CannotBeNull(_) => "variable cannot be null",
+            Error::EnvInvalidType(_, _, _) => "invalid type for environment variable",
         }
     }
 }

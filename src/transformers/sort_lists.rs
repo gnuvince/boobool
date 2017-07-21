@@ -37,20 +37,12 @@ pub fn sort_lists(expr: TypedExpr) -> TypedExpr {
 
 
 fn sort(exprs: Vec<TypedExpr>, list_ty: &Type) -> Vec<TypedExpr> {
-    if is_list_of(list_ty, Type::Int) {
+    if list_ty.is_list_of(Type::Int) {
         return sort_ints(exprs);
-    } else if is_list_of(list_ty, Type::Str) {
+    } else if list_ty.is_list_of(Type::Str) {
         return sort_strs(exprs);
     } else {
         unreachable!()
-    }
-}
-
-
-fn is_list_of(ty: &Type, elem_ty: Type) -> bool {
-    match *ty {
-        Type::List(ref t) => **t == elem_ty,
-        _ => false
     }
 }
 

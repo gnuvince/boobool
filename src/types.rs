@@ -14,6 +14,15 @@ pub enum Type {
     Func(Vec<Type>, Box<Type>),
 }
 
+impl Type {
+    pub fn is_list_of(&self, expected_ty: Type) -> bool {
+        match *self {
+            Type::List(ref actual_ty) => **actual_ty == expected_ty,
+            _ => false
+        }
+    }
+}
+
 
 
 /// An enum to specify whether a variable can
