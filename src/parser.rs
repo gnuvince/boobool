@@ -3,6 +3,8 @@ use tokens::Token;
 use tokens::TokenCategory as TC;
 use ast::{ExprCategory, UntypedExpr, CmpOp, SetOp};
 
+
+/// A predictive, recursive-descent parser.
 #[derive(Debug)]
 pub struct Parser {
     tokens: Vec<Token>,
@@ -20,6 +22,10 @@ fn mkexpr(ec: ExprCategory<()>, pos: usize) -> UntypedExpr {
 
 
 impl Parser {
+    /// Parses a vector of token into an AST.
+    /// Just like the scanner, the parser does not attempt
+    /// to recover from errors; the immediate error is returned
+    /// immediately.
     pub fn parse(tokens: Vec<Token>) -> Result<UntypedExpr> {
         let mut parser = Parser { tokens: tokens, offset: 0 };
         return parser.parse_expr();

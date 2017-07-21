@@ -2,6 +2,9 @@ use tokens::Token;
 use tokens::TokenCategory as TC;
 use errors::{Error, Result};
 
+
+/// A scanner for the Boolean language
+#[derive(Debug)]
 pub struct Scanner {
     src: Vec<u8>,
     offset: usize,
@@ -9,7 +12,10 @@ pub struct Scanner {
 
 
 impl Scanner {
-    /// Scans
+    /// Scans a vector of bytes into a vector of tokens.
+    /// If an error occurs (see errors.rs for a list of
+    /// the possible errors), scanning is interrupted
+    /// and does not attempt to recover and continue.
     pub fn scan(src: Vec<u8>) -> Result<Vec<Token>> {
         let mut scanner = Scanner { src: src, offset: 0 };
         return scanner.scan_expr();
