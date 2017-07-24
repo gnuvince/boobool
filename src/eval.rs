@@ -85,7 +85,9 @@ fn value_expr(expr: TypedExpr, st: &Symtable, env: &Env) -> Result<Value> {
                     Err(Error::EvalError)
             }
         }
-        _ => unimplemented!()
+        ExprCategory::Call(func_name, args) => {
+            return value_call(func_name, args, st, env);
+        }
     }
 }
 
@@ -111,6 +113,34 @@ fn value_setop(op: SetOp, left: TypedExpr, right: TypedExpr,
         (Value::ListInt(xs), Value::ListInt(ys)) => Ok(Value::Bool(set_op(op, xs, ys))),
         (Value::ListStr(xs), Value::ListStr(ys)) => Ok(Value::Bool(set_op(op, xs, ys))),
         _ => Err(Error::EvalError)
+    }
+}
+
+fn value_call(func_name: String, args: Vec<TypedExpr>,
+              st: &Symtable, env: &Env) -> Result<Value> {
+    let mut arg_values = Vec::with_capacity(args.len());
+    for arg in args {
+        arg_values.push(value_expr(arg, st, env)?);
+    }
+    if func_name == "starts_with" { return value_string_op(|x,y| x.starts_with(y), arg_values); }
+    if func_name == "ends_with" { return value_string_op(|x, y| x.ends_with(y), arg_values); }
+    if func_name == "contains" { return value_string_op(|x, y| x.contains(y), arg_values); }
+    if func_name == "within_frequency_cap" { unimplemented!() }
+    if func_name == "segment_within" { unimplemented!() }
+    if func_name == "segment_before" { unimplemented!() }
+    return Err(Error::EvalError);
+}
+
+
+fn value_string_op<F>(f: F, args: Vec<Value>) -> Result<Value>
+    where F: Fn(&str, &str) -> bool
+{
+    if args.len() != 2 { return Err(Error::EvalError); }
+    match (&args[0], &args[1]) {
+        (&Value::Str(ref whole), &Value::Str(ref pattern)) =>
+            Ok(Value::Bool(f(whole, pattern))),
+        (_, _) =>
+            Err(Error::EvalError)
     }
 }
 
