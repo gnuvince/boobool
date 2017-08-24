@@ -45,7 +45,6 @@ impl Scanner {
         if self.looking_at(b"<")    { return Ok(Token::new(TC::Lt, None, self.offset)); }
         if self.looking_at(b">")    { return Ok(Token::new(TC::Gt, None, self.offset)); }
         if self.looking_at(b",")    { return Ok(Token::new(TC::Comma, None, self.offset)); }
-        if self.looking_at(b"in")   { return Ok(Token::new(TC::In, None, self.offset)); }
         if self.peek() == b'"'      { return self.scan_string(b'"'); }
         if self.peek() == b'\''     { return self.scan_string(b'\''); }
         if is_digit(self.peek())    { return self.scan_number(); }
@@ -80,6 +79,7 @@ impl Scanner {
             self.offset += 1;
         }
 
+        if buf == "in"   { return Ok(Token::new(TC::In, None, initial_offset)); }
         if buf == "not"  { return Ok(Token::new(TC::Not, None, initial_offset)); }
         if buf == "and"  { return Ok(Token::new(TC::And, None, initial_offset)); }
         if buf == "or"   { return Ok(Token::new(TC::Or, None, initial_offset)); }
